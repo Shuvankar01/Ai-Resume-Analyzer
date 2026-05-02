@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+@theme {
+  --color-neon-blue: #00f3ff;
+  --color-neon-blue-glow: rgba(0, 243, 255, 0.5);
+  --color-dark-bg: #0a0a0f;
+  --color-dark-card: rgba(20, 20, 30, 0.7);
+}
+
+@layer utilities {
+  .glass-panel {
+    background: var(--color-dark-card);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  }
+
+  .neon-text {
+    color: var(--color-neon-blue);
+    text-shadow: 0 0 5px var(--color-neon-blue-glow), 0 0 10px var(--color-neon-blue-glow);
+  }
+
+  .neon-border {
+    border-color: var(--color-neon-blue);
+    box-shadow: 0 0 5px var(--color-neon-blue-glow), inset 0 0 5px var(--color-neon-blue-glow);
+  }
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-dark-bg);
+  color: #ffffff;
+  min-height: 100vh;
+  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+}
