@@ -26,6 +26,16 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     email: Optional[str] = None
 
+# --- Job Schemas ---
+class JobResponse(BaseModel):
+    id: str
+    status: str
+    job_name: Optional[str] = None
+    job_metadata: Optional[dict] = None
+    is_done: bool = False
+    result: Optional[dict] = None
+    error_message: Optional[str] = None
+
 # --- Resume Schemas ---
 class ResumeBase(BaseModel):
     filename: str
