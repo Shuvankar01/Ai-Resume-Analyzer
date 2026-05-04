@@ -15,7 +15,15 @@ class Settings(BaseSettings):
 
     # Gemini AI
     GEMINI_API_KEY: str
-    GEMINI_MODEL: str = "gemini-2.0-flash"
+    GEMINI_MODEL: str = "gemini-1.5-flash"
+
+    # Production Server
+    WORKERS_COUNT: int = 4
+    PORT: int = 8000
+    HOST: str = "0.0.0.0"
+
+    # Rate Limiting
+    RATE_LIMIT_PER_MINUTE: str = "30"
 
     class Config:
         env_file = ".env"

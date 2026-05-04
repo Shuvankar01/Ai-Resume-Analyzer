@@ -1,3 +1,4 @@
+import datetime
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Text, Float, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -56,3 +57,19 @@ class Analysis(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     resume = relationship("Resume", back_populates="analysis")
+
+
+class Job(Base):
+    __tablename__ = "jobs"
+    
+    id = Column(String, primary_key=True, index=True) # UUID string
+    user_id = Column(Integer, index=True)
+    resume_id = Column(Integer)
+    status = Column(String, default="pending") # pending, processing, done, failed
+    job_name = Column(String, nullable=True)
+    job_metadata = Column(Text, nullable=True) # JSON string
+    is_done = Column(Boolean, default=False)
+    result = Column(Text, nullable=True) # JSON string
+    error_message = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
