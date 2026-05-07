@@ -6,7 +6,12 @@ import { Loader2, AlertTriangle } from 'lucide-react';
 // Lazy load pages for performance
 const Login = lazy(() => import('./pages/Login'));
 const CandidateDashboard = lazy(() => import('./pages/CandidateDashboard'));
+const CandidateOverview = lazy(() => import('./pages/CandidateOverview'));
 const RecruiterDashboard = lazy(() => import('./pages/RecruiterDashboard'));
+const Overview = lazy(() => import('./pages/Overview'));
+const TalentPool = lazy(() => import('./pages/TalentPool'));
+const Preferences = lazy(() => import('./pages/Preferences'));
+const Profile = lazy(() => import('./pages/Profile'));
 
 function GlobalAlert() {
   const { systemAlert } = useApp();
@@ -55,11 +60,20 @@ function AppRoutes() {
           <Route 
             path="/candidate" 
             element={user && user.role === 'candidate' ? <CandidateDashboard setUser={setUser} /> : <Navigate to="/" />} 
-          />
+          >
+            <Route index element={<CandidateOverview />} />
+            <Route path="preferences" element={<Preferences />} />
+            <Route path="profile" element={<Profile />} />
+          </Route>
           <Route 
             path="/recruiter" 
-            element={user && user.role === 'recruiter' ? <RecruiterDashboard setUser={setUser} /> : <Navigate to="/" />} 
-          />
+            element={user && user.role === 'recruiter' ? <RecruiterDashboard setUser={setUser} /> : <Navigate to="/" />}
+          >
+            <Route index element={<Overview />} />
+            <Route path="talent-pool" element={<TalentPool />} />
+            <Route path="preferences" element={<Preferences />} />
+            <Route path="profile" element={<Profile />} />
+          </Route>
         </Routes>
       </Suspense>
     </div>
