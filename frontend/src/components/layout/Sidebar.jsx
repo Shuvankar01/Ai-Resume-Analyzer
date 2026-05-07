@@ -1,14 +1,16 @@
 import { LayoutDashboard, FileText, Users, Settings, LogOut, ChevronLeft, ChevronRight, BrainCircuit } from 'lucide-react';
 import { useState } from 'react';
+import { NavLink } from 'react-router-dom';
 
-export default function Sidebar({ role, activeTab, setActiveTab, onLogout }) {
+export default function Sidebar({ role, onLogout }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const menuItems = [
-    { id: 'dashboard', label: 'Overview', icon: LayoutDashboard, roles: ['candidate', 'recruiter'] },
-    { id: 'resumes', label: 'Documents', icon: FileText, roles: ['candidate'] },
-    { id: 'candidates', label: 'Talent Pool', icon: Users, roles: ['recruiter'] },
-    { id: 'settings', label: 'Preferences', icon: Settings, roles: ['candidate', 'recruiter'] },
+    { id: 'dashboard', label: 'Overview', icon: LayoutDashboard, path: '/recruiter', roles: ['recruiter'], end: true },
+    { id: 'candidate-dashboard', label: 'Overview', icon: LayoutDashboard, path: '/candidate', roles: ['candidate'], end: true },
+    { id: 'resumes', label: 'Documents', icon: FileText, path: '/candidate/documents', roles: ['candidate'] },
+    { id: 'candidates', label: 'Talent Pool', icon: Users, path: '/recruiter/talent-pool', roles: ['recruiter'] },
+    { id: 'settings', label: 'Preferences', icon: Settings, path: role === 'recruiter' ? '/recruiter/preferences' : '/candidate/preferences', roles: ['candidate', 'recruiter'] },
   ];
 
   const filteredItems = menuItems.filter(item => item.roles.includes(role));
@@ -37,27 +39,32 @@ export default function Sidebar({ role, activeTab, setActiveTab, onLogout }) {
         {/* Navigation */}
         <nav className="flex-1 px-4 space-y-3 mt-8">
           {filteredItems.map((item) => (
-            <button
+            <NavLink
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 group relative ${
-                activeTab === item.id 
+              to={item.path}
+              end={item.end}
+              className={({ isActive }) => `w-full flex items-center gap-4 p-4 rounded-2xl transition-all duration-300 group relative ${
+                isActive 
                 ? 'bg-[#00f3ff]/10 text-[#00f3ff] border border-[#00f3ff]/20 shadow-[0_0_20px_rgba(0,243,255,0.1)]' 
                 : 'text-gray-500 hover:bg-white/[0.03] hover:text-gray-200'
               }`}
             >
-              {activeTab === item.id && (
-                <div className="absolute left-0 w-1.5 h-8 bg-[#00f3ff] rounded-r-full shadow-[0_0_15px_rgba(0,243,255,0.8)]"></div>
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <div className="absolute left-0 w-1.5 h-8 bg-[#00f3ff] rounded-r-full shadow-[0_0_15px_rgba(0,243,255,0.8)]"></div>
+                  )}
+                  <item.icon size={24} className={isActive ? 'drop-shadow-[0_0_10px_rgba(0,243,255,0.6)]' : 'group-hover:scale-110 transition-transform'} />
+                  {!isCollapsed && <span className="font-bold tracking-tight">{item.label}</span>}
+                  
+                  {isCollapsed && (
+                    <div className="absolute left-full ml-4 px-3 py-2 bg-[#1a1a25] text-white text-[10px] font-bold uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all whitespace-nowrap z-50 border border-white/10 shadow-2xl">
+                      {item.label}
+                    </div>
+                  )}
+                </>
               )}
-              <item.icon size={24} className={activeTab === item.id ? 'drop-shadow-[0_0_10px_rgba(0,243,255,0.6)]' : 'group-hover:scale-110 transition-transform'} />
-              {!isCollapsed && <span className="font-bold tracking-tight">{item.label}</span>}
-              
-              {isCollapsed && (
-                <div className="absolute left-full ml-4 px-3 py-2 bg-[#1a1a25] text-white text-[10px] font-bold uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all whitespace-nowrap z-50 border border-white/10 shadow-2xl">
-                  {item.label}
-                </div>
-              )}
-            </button>
+            </NavLink>
           ))}
         </nav>
 

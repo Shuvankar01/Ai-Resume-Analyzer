@@ -1,6 +1,9 @@
+import { Link } from 'react-router-dom';
 import { Bell, Search, User, Globe, Command } from 'lucide-react';
 
 export default function Navbar({ user }) {
+  const profilePath = user?.role === 'recruiter' ? '/recruiter/profile' : '/candidate/profile';
+
   return (
     <nav className="sticky top-0 w-full h-20 glass-panel border-b border-white/5 px-6 md:px-10 flex items-center justify-between z-[40] backdrop-blur-xl bg-[#0a0a0f]/40">
       {/* Search Bar / Command Menu */}
@@ -32,7 +35,7 @@ export default function Navbar({ user }) {
             <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-[#00f3ff] rounded-full shadow-[0_0_15px_rgba(0,243,255,1)] animate-pulse"></span>
           </button>
           
-          <div className="flex items-center gap-4 pl-4 md:pl-8 border-l border-white/5">
+          <Link to={profilePath} className="flex items-center gap-4 pl-4 md:pl-8 border-l border-white/5 hover:opacity-80 transition-opacity">
             <div className="text-right hidden sm:block space-y-0.5">
               <p className="text-sm font-bold text-white tracking-tight leading-none">{user?.full_name || 'System Admin'}</p>
               <p className="text-[10px] text-gray-500 uppercase tracking-widest font-black leading-none">{user?.role || 'Guest'}</p>
@@ -41,7 +44,7 @@ export default function Navbar({ user }) {
                <div className="absolute inset-0 bg-white/0 group-hover:bg-white/5 transition-colors"></div>
                <User size={24} className="relative z-10" />
             </div>
-          </div>
+          </Link>
         </div>
       </div>
     </nav>
