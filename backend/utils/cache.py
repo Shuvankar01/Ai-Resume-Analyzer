@@ -1,7 +1,7 @@
 import redis
-import json
 from config import settings
 from functools import wraps
+from utils.serializer import redis_dumps, redis_loads
 
 redis_client = redis.Redis.from_url(settings.REDIS_URL, decode_responses=True)
 
@@ -18,10 +18,10 @@ def cache_response(expiration: int = 3600):
             cache_key = f"{func.__name__}:{str(args)}:{str(kwargs)}"
             cached_value = redis_client.get(cache_key)
             if cached_value:
-                return json.loads(cached_value)
+                return redis_loads(cached_value)
             
             result = func(*args, **kwargs)
-            redis_client.setex(cache_key, expiration, json.dumps(result))
+            redis_client.setex(cache_key, expiration, redis_dumps(result))
             return result
         return wrapper
     return decorator
@@ -30,7 +30,7 @@ def get_cached_analysis(resume_id: int, job_id: int):
     key = f"analysis:{resume_id}:{job_id}"
     data = redis_client.get(key)
     if data:
-        return json.loads(data)
+        return redis_loads(data)
     return None
 
 def set_cached_analysis(resume_id: int, job_id: int, data: dict, exp=3600):
@@ -38,5 +38,5 @@ def set_cached_analysis(resume_id: int, job_id: int, data: dict, exp=3600):
     redis_client.setex(
     key,
     exp,
-    json.dumps(data, default=str)
+    redis_dumps(data)
 )
