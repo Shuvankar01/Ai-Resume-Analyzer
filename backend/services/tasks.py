@@ -1,11 +1,13 @@
 import json
 import logging
+import asyncio
 from celery_app import celery_app
 from database import SessionLocal
 import models, schemas
 from services.job_service import job_service
-from utils.gemini_client import analyze_resume_with_gemini
+from services.gemini_service import gemini_service
 from utils.cache import set_cached_analysis
+from utils.serializer import redis_dumps
 
 logger = logging.getLogger(__name__)
 
@@ -19,38 +21,31 @@ logger = logging.getLogger(__name__)
 )
 def run_distributed_analysis(self, job_id: str, resume_id: int, job_description: str, user_id: int):
     """Distributed Celery task for AI analysis with automatic retries."""
-    logger.info(f"Executing distributed job {job_id} for resume {resume_id}")
+    logger.info(f"⚡ [Task Start] Job: {job_id} | Resume: {resume_id}")
     job_service.update_job(job_id, "processing")
     
     db = SessionLocal()
     try:
         resume = db.query(models.Resume).filter(models.Resume.id == resume_id).first()
         if not resume:
+            logger.error(f"❌ Resume {resume_id} not found for Job {job_id}")
             job_service.update_job(job_id, "failed", error="Resume not found")
             return
 
-        # Check for existing analysis to ensure idempotency
-        # Note: In a real production system, you might want to allow re-analysis 
-        # but here we follow the cache/persistence logic.
-        job_id_hash = hash(job_description)
-        
         # Perform AI Analysis
-        # Note: Celery tasks are sync wrappers around async calls if needed, 
-        # but here we can just use a synchronous-style call or run the event loop.
-        # For simplicity with Gemini client (which is async), we'll run it in a loop.
-        import asyncio
+        logger.info(f"🧠 Running AI Analysis for Job {job_id}")
         loop = asyncio.get_event_loop()
-        analysis_result = loop.run_until_complete(analyze_resume_with_gemini(resume.extracted_text, job_description))
+        analysis_result = loop.run_until_complete(gemini_service.analyze_resume(resume.extracted_text, job_description))
         
         # Save to PostgreSQL
         new_analysis = models.Analysis(
             resume_id=resume_id,
             ats_score=analysis_result.get("ats_score", 0),
-            matched_keywords=json.dumps(analysis_result.get("matched_keywords", [])),
-            missing_keywords=json.dumps(analysis_result.get("missing_keywords", [])),
+            matched_keywords=redis_dumps(analysis_result.get("matched_keywords", [])),
+            missing_keywords=redis_dumps(analysis_result.get("missing_keywords", [])),
             recommendations=analysis_result.get("recommendations", ""),
             recruiter_summary=analysis_result.get("recruiter_summary", ""),
-            candidate_strengths=json.dumps(analysis_result.get("candidate_strengths", []))
+            candidate_strengths=redis_dumps(analysis_result.get("candidate_strengths", []))
         )
         db.add(new_analysis)
         db.commit()
@@ -75,14 +70,23 @@ def run_distributed_analysis(self, job_id: str, resume_id: int, job_description:
 
         # Update Job Status
         job_service.update_job(job_id, "done", result=response_data.model_dump())
-        logger.info(f"Job {job_id} completed successfully via Celery")
+        logger.info(f"✅ [Task Success] Job: {job_id}")
 
     except Exception as e:
-        logger.error(f"Celery Job {job_id} failed: {str(e)}")
-        # Auto-retry for transient errors
+        logger.error(f"💥 [Task Error] Job: {job_id} | Error: {str(e)}")
+        
+        # FATAL ERRORS: Do not retry (Code issues, missing imports, data type issues)
+        if isinstance(e, (NameError, TypeError, ValueError, ImportError)):
+            logger.critical(f"🚫 Fatal task error in {job_id}: {str(e)}")
+            job_service.update_job(job_id, "failed", error=f"Fatal System Error: {str(e)}")
+            return
+            
+        # TRANSIENT ERRORS: Auto-retry (Network, API timeouts, DB locks)
         try:
+            logger.warning(f"🔄 Retrying job {job_id}... Attempt {self.request.retries + 1}/3")
             self.retry(exc=e)
         except self.MaxRetriesExceededError:
+            logger.error(f"💀 Max retries exceeded for job {job_id}")
             job_service.update_job(job_id, "failed", error=f"Max retries exceeded: {str(e)}")
     finally:
         db.close()

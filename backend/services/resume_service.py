@@ -1,11 +1,11 @@
-import json
 import logging
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, UploadFile
 import models, schemas
 from utils.pdf_parser import extract_text_from_pdf
-from utils.gemini_client import analyze_resume_with_gemini
+from services.gemini_service import gemini_service
 from utils.cache import get_cached_analysis, set_cached_analysis
+from utils.serializer import redis_dumps, redis_loads
 
 logger = logging.getLogger(__name__)
 
@@ -63,16 +63,16 @@ async def analyze_candidate_resume(resume_id: int, job_description: str, db: Ses
         return cached
 
     try:
-        analysis_result = await analyze_resume_with_gemini(resume.extracted_text, job_description)
+        analysis_result = await gemini_service.analyze_resume(resume.extracted_text, job_description)
         
         new_analysis = models.Analysis(
             resume_id=resume_id,
             ats_score=analysis_result.get("ats_score", 0),
-            matched_keywords=json.dumps(analysis_result.get("matched_keywords", [])),
-            missing_keywords=json.dumps(analysis_result.get("missing_keywords", [])),
+            matched_keywords=redis_dumps(analysis_result.get("matched_keywords", [])),
+            missing_keywords=redis_dumps(analysis_result.get("missing_keywords", [])),
             recommendations=analysis_result.get("recommendations", ""),
             recruiter_summary=analysis_result.get("recruiter_summary", ""),
-            candidate_strengths=json.dumps(analysis_result.get("candidate_strengths", []))
+            candidate_strengths=redis_dumps(analysis_result.get("candidate_strengths", []))
         )
         db.add(new_analysis)
         db.commit()
@@ -83,11 +83,11 @@ async def analyze_candidate_resume(resume_id: int, job_description: str, db: Ses
             resume_id=new_analysis.resume_id,
             job_description_id=None,
             ats_score=new_analysis.ats_score,
-            matched_keywords=json.loads(new_analysis.matched_keywords) if new_analysis.matched_keywords else [],
-            missing_keywords=json.loads(new_analysis.missing_keywords) if new_analysis.missing_keywords else [],
+            matched_keywords=redis_loads(new_analysis.matched_keywords) if new_analysis.matched_keywords else [],
+            missing_keywords=redis_loads(new_analysis.missing_keywords) if new_analysis.missing_keywords else [],
             recommendations=new_analysis.recommendations,
             recruiter_summary=new_analysis.recruiter_summary,
-            candidate_strengths=json.loads(new_analysis.candidate_strengths) if new_analysis.candidate_strengths else [],
+            candidate_strengths=redis_loads(new_analysis.candidate_strengths) if new_analysis.candidate_strengths else [],
             created_at=new_analysis.created_at
         )
         

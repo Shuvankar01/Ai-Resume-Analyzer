@@ -3,8 +3,9 @@ import logging
 from database import SessionLocal
 import models, schemas
 from services.job_service import job_service
-from utils.gemini_client import analyze_resume_with_gemini
+from services.gemini_service import gemini_service
 from utils.cache import set_cached_analysis
+from utils.serializer import redis_dumps, redis_loads
 
 logger = logging.getLogger(__name__)
 
@@ -21,17 +22,17 @@ async def run_background_analysis(job_id: str, resume_id: int, job_description: 
             return
 
         # Perform AI Analysis
-        analysis_result = await analyze_resume_with_gemini(resume.extracted_text, job_description)
+        analysis_result = await gemini_service.analyze_resume(resume.extracted_text, job_description)
         
         # Save to PostgreSQL
         new_analysis = models.Analysis(
             resume_id=resume_id,
             ats_score=analysis_result.get("ats_score", 0),
-            matched_keywords=json.dumps(analysis_result.get("matched_keywords", [])),
-            missing_keywords=json.dumps(analysis_result.get("missing_keywords", [])),
+            matched_keywords=redis_dumps(analysis_result.get("matched_keywords", [])),
+            missing_keywords=redis_dumps(analysis_result.get("missing_keywords", [])),
             recommendations=analysis_result.get("recommendations", ""),
             recruiter_summary=analysis_result.get("recruiter_summary", ""),
-            candidate_strengths=json.dumps(analysis_result.get("candidate_strengths", []))
+            candidate_strengths=redis_dumps(analysis_result.get("candidate_strengths", []))
         )
         db.add(new_analysis)
         db.commit()
