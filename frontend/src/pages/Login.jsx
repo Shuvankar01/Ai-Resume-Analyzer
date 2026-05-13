@@ -1,32 +1,29 @@
 import { useState } from 'react';
-import { LogIn, UserPlus, Sparkles, BrainCircuit } from 'lucide-react';
+import { LogIn, UserPlus, BrainCircuit, Loader2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/authService';
 import Toast from '../components/ui/Toast';
 import useToast from '../hooks/useToast';
 
-export default function Login({ setUser }) {
+export default function Login() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [isRecruiter, setIsRecruiter] = useState(false);
+  const [localLoading, setLocalLoading] = useState(false);
+  
+  const { login } = useAuth();
   const { toasts, addToast, removeToast } = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLocalLoading(true);
 
     try {
       if (isLogin) {
-        const data = await authService.login(email, password);
-        const token = data.access_token;
-        
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        const role = payload.is_recruiter ? 'recruiter' : 'candidate';
-
-        localStorage.setItem('token', token);
-        localStorage.setItem('role', role);
-        setUser({ token, role });
-        addToast('Welcome back!', 'success');
+        await login(email, password);
+        addToast('Authentication successful', 'success');
       } else {
         await authService.register({
           email,
@@ -35,23 +32,25 @@ export default function Login({ setUser }) {
           is_recruiter: isRecruiter
         });
         setIsLogin(true);
-        addToast('Account created successfully', 'success');
+        addToast('Profile initialized successfully', 'success');
       }
     } catch (err) {
       addToast(err.response?.data?.detail || 'Authentication failed', 'error');
+    } finally {
+      setLocalLoading(false);
     }
   };
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-[#0a0a0f] overflow-hidden p-6">
       {/* BACKGROUND DECORATIONS */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#00f3ff]/10 blur-[150px] rounded-full"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#8b5cf6]/10 blur-[150px] rounded-full"></div>
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#00f3ff]/10 blur-[150px] rounded-full animate-pulse"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#8b5cf6]/10 blur-[150px] rounded-full animate-pulse" style={{ animationDelay: '2s' }}></div>
       
       <div className="w-full max-w-xl relative z-10">
         <div className="text-center mb-10 space-y-4">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-[28px] bg-white/[0.03] border border-white/10 mb-4 premium-glow">
-            <BrainCircuit size={40} className="text-[#00f3ff]" />
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-[28px] bg-white/[0.03] border border-white/10 mb-4 premium-glow group">
+            <BrainCircuit size={40} className="text-[#00f3ff] group-hover:scale-110 transition-transform duration-500" />
           </div>
           <h1 className="text-5xl font-black text-white tracking-tight">
             Resume<span className="text-[#00f3ff]">AI</span>
@@ -108,7 +107,7 @@ export default function Login({ setUser }) {
                 <input
                   type="checkbox"
                   id="recruiter"
-                  className="w-5 h-5 rounded-lg border-white/10 bg-black/40 text-[#00f3ff] focus:ring-[#00f3ff]/20 outline-none"
+                  className="w-5 h-5 rounded-lg border-white/10 bg-black/40 text-[#00f3ff] focus:ring-[#00f3ff]/20 outline-none cursor-pointer"
                   checked={isRecruiter}
                   onChange={(e) => setIsRecruiter(e.target.checked)}
                 />
@@ -120,9 +119,12 @@ export default function Login({ setUser }) {
 
             <button
               type="submit"
-              className="w-full py-5 premium-gradient text-white rounded-2xl font-bold text-lg shadow-[0_15px_40px_rgba(0,243,255,0.2)] transition-all active:scale-[0.98] flex items-center justify-center gap-3"
+              disabled={localLoading}
+              className="w-full py-5 premium-gradient text-white rounded-2xl font-bold text-lg shadow-[0_15px_40px_rgba(0,243,255,0.2)] transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3"
             >
-              {isLogin ? (
+              {localLoading ? (
+                <Loader2 className="animate-spin" size={24} />
+              ) : isLogin ? (
                 <><LogIn size={24} /> <span>Establish Link</span></>
               ) : (
                 <><UserPlus size={24} /> <span>Create Identifier</span></>
