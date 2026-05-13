@@ -1,9 +1,13 @@
-import { LayoutDashboard, FileText, Users, Settings, LogOut, ChevronLeft, ChevronRight, BrainCircuit } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Settings, LogOut, ChevronLeft, ChevronRight, BrainCircuit, Shield } from 'lucide-react';
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
-export default function Sidebar({ role, onLogout }) {
+export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { isRecruiter, logout, user } = useAuth();
+  
+  const role = isRecruiter ? 'recruiter' : 'candidate';
 
   const menuItems = [
     { id: 'dashboard', label: 'Overview', icon: LayoutDashboard, path: '/recruiter', roles: ['recruiter'], end: true },
@@ -15,6 +19,10 @@ export default function Sidebar({ role, onLogout }) {
 
   const filteredItems = menuItems.filter(item => item.roles.includes(role));
 
+  const getInitials = (name) => {
+    return name?.split(' ').map(n => n[0]).join('').toUpperCase() || '??';
+  };
+
   return (
     <aside className={`fixed left-0 top-0 h-screen transition-all duration-500 z-50 glass-panel border-r border-white/5 ${isCollapsed ? 'w-20' : 'w-72'}`}>
       <div className="flex flex-col h-full">
@@ -22,8 +30,8 @@ export default function Sidebar({ role, onLogout }) {
         <div className="p-8 flex items-center justify-between">
           {!isCollapsed && (
             <div className="flex items-center gap-3 animate-in fade-in slide-in-from-left duration-500">
-              <div className="w-10 h-10 rounded-xl premium-gradient flex items-center justify-center shadow-[0_0_20px_rgba(0,243,255,0.3)]">
-                <BrainCircuit size={24} className="text-white" />
+              <div className="w-10 h-10 rounded-xl premium-gradient flex items-center justify-center shadow-[0_0_20px_rgba(0,243,255,0.3)] group cursor-pointer">
+                <BrainCircuit size={24} className="text-white group-hover:rotate-[30deg] transition-transform" />
               </div>
               <span className="text-xl font-black text-white tracking-tighter">Resume<span className="text-[#00f3ff]">AI</span></span>
             </div>
@@ -68,14 +76,35 @@ export default function Sidebar({ role, onLogout }) {
           ))}
         </nav>
 
-        {/* User / Logout Section */}
+        {/* User Mini Profile & Logout */}
         <div className="p-6 border-t border-white/5 space-y-4">
+          {!isCollapsed && (
+            <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center gap-3 animate-in fade-in duration-700">
+              <div className="w-10 h-10 rounded-xl bg-[#00f3ff]/10 flex items-center justify-center text-[#00f3ff] border border-[#00f3ff]/20 text-xs font-black">
+                {getInitials(user?.full_name)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold text-white truncate">{user?.full_name}</p>
+                <div className="flex items-center gap-1">
+                  <Shield size={10} className="text-[#00f3ff]" />
+                  <p className="text-[10px] text-gray-500 font-bold uppercase truncate">{isRecruiter ? 'Recruiter' : 'Candidate'}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <button 
-            onClick={onLogout}
+            onClick={logout}
             className={`w-full flex items-center gap-4 p-4 rounded-2xl text-gray-500 hover:bg-red-500/10 hover:text-red-400 transition-all duration-300 group ${isCollapsed ? 'justify-center' : ''}`}
           >
             <LogOut size={24} className="group-hover:translate-x-1 transition-transform" />
-            {!isCollapsed && <span className="font-bold tracking-tight">Terminate Session</span>}
+            {!isCollapsed && <span className="font-bold tracking-tight text-sm">Terminate Session</span>}
+            
+            {isCollapsed && (
+              <div className="absolute left-full ml-4 px-3 py-2 bg-[#1a1a25] text-red-400 text-[10px] font-bold uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all whitespace-nowrap z-50 border border-red-500/10 shadow-2xl">
+                Logout
+              </div>
+            )}
           </button>
         </div>
       </div>
