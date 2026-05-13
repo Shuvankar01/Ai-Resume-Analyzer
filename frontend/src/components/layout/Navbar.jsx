@@ -1,8 +1,16 @@
 import { Link } from 'react-router-dom';
-import { Bell, Search, User, Globe, Command } from 'lucide-react';
+import { Bell, Search, User, Globe, Command, LogOut } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { memo } from 'react';
 
-export default function Navbar({ user }) {
-  const profilePath = user?.role === 'recruiter' ? '/recruiter/profile' : '/candidate/profile';
+const Navbar = memo(() => {
+  const { user, logout, isRecruiter } = useAuth();
+  
+  const profilePath = isRecruiter ? '/recruiter/profile' : '/candidate/profile';
+
+  const getInitials = (name) => {
+    return name?.split(' ').map(n => n[0]).join('').toUpperCase() || '??';
+  };
 
   return (
     <nav className="sticky top-0 w-full h-20 glass-panel border-b border-white/5 px-6 md:px-10 flex items-center justify-between z-[40] backdrop-blur-xl bg-[#0a0a0f]/40">
@@ -24,9 +32,9 @@ export default function Navbar({ user }) {
 
       {/* User Actions */}
       <div className="flex items-center gap-4 md:gap-8">
-        <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold text-gray-500 tracking-widest uppercase">
+        <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold text-gray-500 tracking-widest uppercase cursor-default">
           <Globe size={12} className="text-green-500 animate-pulse" />
-          Node: Virginia-East
+          Protocol: Edge-Alpha
         </div>
 
         <div className="flex items-center gap-4">
@@ -35,18 +43,39 @@ export default function Navbar({ user }) {
             <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-[#00f3ff] rounded-full shadow-[0_0_15px_rgba(0,243,255,1)] animate-pulse"></span>
           </button>
           
-          <Link to={profilePath} className="flex items-center gap-4 pl-4 md:pl-8 border-l border-white/5 hover:opacity-80 transition-opacity">
-            <div className="text-right hidden sm:block space-y-0.5">
-              <p className="text-sm font-bold text-white tracking-tight leading-none">{user?.full_name || 'System Admin'}</p>
-              <p className="text-[10px] text-gray-500 uppercase tracking-widest font-black leading-none">{user?.role || 'Guest'}</p>
-            </div>
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#00f3ff]/10 to-[#8b5cf6]/10 border border-white/10 flex items-center justify-center text-[#00f3ff] shadow-2xl relative group overflow-hidden">
-               <div className="absolute inset-0 bg-white/0 group-hover:bg-white/5 transition-colors"></div>
-               <User size={24} className="relative z-10" />
-            </div>
-          </Link>
+          <div className="flex items-center gap-4 pl-4 md:pl-8 border-l border-white/5">
+            <Link to={profilePath} className="flex items-center gap-4 hover:opacity-80 transition-opacity group">
+              <div className="text-right hidden sm:block space-y-0.5">
+                <p className="text-sm font-bold text-white tracking-tight leading-none group-hover:text-[#00f3ff] transition-colors">
+                  {user?.full_name || 'Establishing Link...'}
+                </p>
+                <p className="text-[10px] text-gray-500 uppercase tracking-widest font-black leading-none">
+                  {isRecruiter ? 'Recruiter' : 'Candidate'}
+                </p>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#00f3ff]/10 to-[#8b5cf6]/10 border border-white/10 flex items-center justify-center text-[#00f3ff] shadow-2xl relative overflow-hidden group-hover:border-[#00f3ff]/40 transition-all">
+                 <div className="absolute inset-0 bg-white/0 group-hover:bg-white/5 transition-colors"></div>
+                 {user?.avatar ? (
+                   <img src={user.avatar} alt={user.full_name} className="w-full h-full object-cover" />
+                 ) : (
+                   <span className="text-sm font-black">{getInitials(user?.full_name)}</span>
+                 )}
+              </div>
+            </Link>
+
+            <button 
+              onClick={logout}
+              className="p-2.5 rounded-xl bg-red-500/5 border border-red-500/10 text-red-500 hover:bg-red-500/10 transition-all"
+              title="Logout Session"
+            >
+              <LogOut size={20} />
+            </button>
+          </div>
         </div>
       </div>
     </nav>
   );
-}
+});
+
+Navbar.displayName = 'Navbar';
+export default Navbar;
