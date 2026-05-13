@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { lazy, Suspense } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { Loader2, AlertTriangle } from 'lucide-react';
 
 // Lazy load pages for performance
@@ -32,21 +33,18 @@ function GlobalAlert() {
 function LoadingFallback() {
   return (
     <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
-      <Loader2 className="text-[#00f3ff] animate-spin" size={48} />
+      <div className="relative">
+        <Loader2 className="text-[#00f3ff] animate-spin" size={48} />
+        <div className="absolute inset-0 bg-[#00f3ff]/10 blur-xl rounded-full"></div>
+      </div>
     </div>
   );
 }
 
 function AppRoutes() {
-  const [user, setUser] = useState(null);
+  const { user, loading, isRecruiter } = useAuth();
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const role = localStorage.getItem('role');
-    if (token && role) {
-      setUser({ token, role });
-    }
-  }, []);
+  if (loading) return <LoadingFallback />;
 
   return (
     <div className="min-h-screen text-white bg-[#0a0a0f]">
@@ -55,25 +53,32 @@ function AppRoutes() {
         <Routes>
           <Route 
             path="/" 
-            element={!user ? <Login setUser={setUser} /> : <Navigate to={user.role === 'recruiter' ? '/recruiter' : '/candidate'} />} 
+            element={!user ? <Login /> : <Navigate to={isRecruiter ? '/recruiter' : '/candidate'} />} 
           />
+          
+          {/* Candidate Routes */}
           <Route 
             path="/candidate" 
-            element={user && user.role === 'candidate' ? <CandidateDashboard setUser={setUser} /> : <Navigate to="/" />} 
+            element={user && !isRecruiter ? <CandidateDashboard /> : <Navigate to="/" />} 
           >
             <Route index element={<CandidateOverview />} />
             <Route path="preferences" element={<Preferences />} />
             <Route path="profile" element={<Profile />} />
           </Route>
+
+          {/* Recruiter Routes */}
           <Route 
             path="/recruiter" 
-            element={user && user.role === 'recruiter' ? <RecruiterDashboard setUser={setUser} /> : <Navigate to="/" />}
+            element={user && isRecruiter ? <RecruiterDashboard /> : <Navigate to="/" />}
           >
             <Route index element={<Overview />} />
             <Route path="talent-pool" element={<TalentPool />} />
             <Route path="preferences" element={<Preferences />} />
             <Route path="profile" element={<Profile />} />
           </Route>
+
+          {/* Catch-all */}
+          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Suspense>
     </div>
@@ -83,9 +88,11 @@ function AppRoutes() {
 function App() {
   return (
     <AppProvider>
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
+      <AuthProvider>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </AuthProvider>
     </AppProvider>
   );
 }
