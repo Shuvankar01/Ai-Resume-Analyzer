@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Bell, Search, User, Globe, Command, LogOut } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
 import { memo } from 'react';
 
 const Navbar = memo(() => {
