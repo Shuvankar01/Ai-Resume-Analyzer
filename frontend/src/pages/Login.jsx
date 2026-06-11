@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { LogIn, UserPlus, BrainCircuit, Loader2 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { authService } from '../services/authService';
 import Toast from '../components/ui/Toast';
 import useToast from '../hooks/useToast';

@@ -1,5 +1,5 @@
 import { User, Mail, Briefcase, MapPin, Camera, Calendar, ShieldCheck, Zap } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { memo } from 'react';
 
 const StatCard = memo(({ label, value, unit, colorClass = "text-white" }) => (
