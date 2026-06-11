@@ -1,7 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './hooks/useAuth';
+import ProtectedRoute from './components/ProtectedRoute';
 import { Loader2, AlertTriangle } from 'lucide-react';
 
 // Lazy load pages for performance
@@ -59,7 +61,11 @@ function AppRoutes() {
           {/* Candidate Routes */}
           <Route 
             path="/candidate" 
-            element={user && !isRecruiter ? <CandidateDashboard /> : <Navigate to="/" />} 
+            element={
+              <ProtectedRoute requiredRole="candidate">
+                <CandidateDashboard />
+              </ProtectedRoute>
+            } 
           >
             <Route index element={<CandidateOverview />} />
             <Route path="preferences" element={<Preferences />} />
@@ -69,7 +75,11 @@ function AppRoutes() {
           {/* Recruiter Routes */}
           <Route 
             path="/recruiter" 
-            element={user && isRecruiter ? <RecruiterDashboard /> : <Navigate to="/" />}
+            element={
+              <ProtectedRoute requiredRole="recruiter">
+                <RecruiterDashboard />
+              </ProtectedRoute>
+            }
           >
             <Route index element={<Overview />} />
             <Route path="talent-pool" element={<TalentPool />} />
