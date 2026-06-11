@@ -1,9 +1,9 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { authService } from '../services/authService';
 import api from '../services/api';
 import logger from '../utils/logger';
 
-const AuthContext = createContext();
+export const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -11,12 +11,6 @@ export function AuthProvider({ children }) {
   const [error, setError] = useState(null);
 
   const fetchProfile = useCallback(async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
       const response = await api.get('/auth/me');
@@ -24,11 +18,8 @@ export function AuthProvider({ children }) {
       setError(null);
     } catch (err) {
       logger.error('Failed to fetch user profile', err);
-      // If token is invalid, clear it
-      if (err.response?.status === 401) {
-        logout();
-      }
-      setError('Session expired. Please login again.');
+      // Clear user state if check fails (e.g. unauthenticated or expired cookie)
+      setUser(null);
     } finally {
       setLoading(false);
     }
@@ -42,8 +33,13 @@ export function AuthProvider({ children }) {
     try {
       setLoading(true);
       const data = await authService.login(email, password);
-      localStorage.setItem('token', data.access_token);
-      localStorage.setItem('role', data.role); // Still keeping role for quick routing
+      
+      // Keep Authorization bearer headers as fallback
+      if (data && data.access_token) {
+        api.defaults.headers.common['Authorization'] = `Bearer ${data.access_token}`;
+        localStorage.setItem('token', data.access_token);
+      }
+      
       await fetchProfile();
       return data;
     } catch (err) {
@@ -54,9 +50,18 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (err) {
+      logger.error('Backend logout failed', err);
+    }
+    
+    // Clear tokens and API headers
     localStorage.removeItem('token');
     localStorage.removeItem('role');
+    delete api.defaults.headers.common['Authorization'];
+    
     setUser(null);
     window.location.href = '/';
   };
@@ -67,9 +72,10 @@ export function AuthProvider({ children }) {
     error,
     login,
     logout,
+    authenticated: !!user,
     isAuthenticated: !!user,
     isRecruiter: user?.is_recruiter || false,
-    fetchProfile
+    refreshUser: fetchProfile
   };
 
   return (
@@ -77,12 +83,4 @@ export function AuthProvider({ children }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 }
