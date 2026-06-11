@@ -7,6 +7,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { Loader2, AlertTriangle } from 'lucide-react';
 
 // Lazy load pages for performance
+const Landing = lazy(() => import('./pages/Landing'));
 const Login = lazy(() => import('./pages/Login'));
 const CandidateDashboard = lazy(() => import('./pages/CandidateDashboard'));
 const CandidateOverview = lazy(() => import('./pages/CandidateOverview'));
@@ -34,10 +35,10 @@ function GlobalAlert() {
 
 function LoadingFallback() {
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center">
+    <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
       <div className="relative">
-        <Loader2 className="text-[#00f3ff] animate-spin" size={48} />
-        <div className="absolute inset-0 bg-[#00f3ff]/10 blur-xl rounded-full"></div>
+        <Loader2 className="text-[var(--accent)] animate-spin" size={48} />
+        <div className="absolute inset-0 bg-[var(--accent)]/10 blur-xl rounded-full"></div>
       </div>
     </div>
   );
@@ -49,13 +50,17 @@ function AppRoutes() {
   if (loading) return <LoadingFallback />;
 
   return (
-    <div className="min-h-screen text-white bg-[#0a0a0f]">
+    <div className="min-h-screen text-[var(--text)] bg-[var(--background)]">
       <GlobalAlert />
       <Suspense fallback={<LoadingFallback />}>
         <Routes>
           <Route 
             path="/" 
-            element={!user ? <Login /> : <Navigate to={isRecruiter ? '/recruiter' : '/candidate'} />} 
+            element={!user ? <Landing /> : <Navigate to={isRecruiter ? '/recruiter' : '/candidate'} replace />} 
+          />
+          <Route 
+            path="/login" 
+            element={!user ? <Login /> : <Navigate to={isRecruiter ? '/recruiter' : '/candidate'} replace />} 
           />
           
           {/* Candidate Routes */}
@@ -88,7 +93,7 @@ function AppRoutes() {
           </Route>
 
           {/* Catch-all */}
-          <Route path="*" element={<Navigate to="/" />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
     </div>
