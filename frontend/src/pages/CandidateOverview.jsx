@@ -1,16 +1,26 @@
 import { useState, useCallback, memo } from 'react';
-import { UploadCloud, CheckCircle, Download, FileText, Search, Plus, RefreshCw, Sparkles, Activity, Target, Zap, AlertTriangle } from 'lucide-react';
+import { UploadCloud, File as FileIcon, Search, Plus, RefreshCw, Sparkles, Activity, FileText } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import ATSScoreCard from '../components/ui/ATSScoreCard';
-import Badge from '../components/ui/Badge';
 import GlassCard from '../components/ui/GlassCard';
 import MotionWrapper from '../components/ui/MotionWrapper';
-import MetricCard from '../components/ui/MetricCard';
+import AIProcessing from '../components/ui/AIProcessing';
+import ErrorState from '../components/ui/ErrorState';
+import ReportCard from '../components/ui/ReportCard';
 import { resumeService } from '../services/resumeService';
 import Toast from '../components/ui/Toast';
 import useToast from '../hooks/useToast';
 
 const MemoizedScoreCard = memo(ATSScoreCard);
+
+const STATUS = {
+  EMPTY: 'EMPTY',
+  SELECTED: 'SELECTED',
+  UPLOADING: 'UPLOADING',
+  PROCESSING: 'PROCESSING',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED'
+};
 
 export default function CandidateOverview() {
   const { user } = useAuth();
@@ -18,8 +28,10 @@ export default function CandidateOverview() {
   const [jobDescription, setJobDescription] = useState('');
   const [resumeId, setResumeId] = useState(null);
   const [analysis, setAnalysis] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState('');
+  const [status, setStatus] = useState(STATUS.EMPTY);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [isDragActive, setIsDragActive] = useState(false);
+  
   const { toasts, addToast, removeToast } = useToast();
 
   const handleReset = () => {
@@ -27,55 +39,75 @@ export default function CandidateOverview() {
     setJobDescription('');
     setResumeId(null);
     setAnalysis(null);
-    setStep('');
+    setStatus(STATUS.EMPTY);
+    setErrorMsg('');
   };
 
-  const handleUpload = useCallback(async (e) => {
+  const onDragOver = useCallback((e) => {
     e.preventDefault();
-    if (!file) return;
+    if (status === STATUS.EMPTY || status === STATUS.SELECTED) {
+      setIsDragActive(true);
+    }
+  }, [status]);
 
-    setLoading(true);
-    setStep("Uploading resume...");
+  const onDragLeave = useCallback((e) => {
+    e.preventDefault();
+    setIsDragActive(false);
+  }, []);
+
+  const onDrop = useCallback((e) => {
+    e.preventDefault();
+    setIsDragActive(false);
+    if (status !== STATUS.EMPTY && status !== STATUS.SELECTED) return;
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const droppedFile = e.dataTransfer.files[0];
+      if (droppedFile.type === 'application/pdf') {
+        setFile(droppedFile);
+        setStatus(STATUS.SELECTED);
+      } else {
+        addToast('Only PDF files are supported', 'error');
+      }
+    }
+  }, [status, addToast]);
+
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFile(e.target.files[0]);
+      setStatus(STATUS.SELECTED);
+    }
+  };
+
+  const handleWorkflow = async (e) => {
+    e.preventDefault();
+    if (!file || !jobDescription) {
+       addToast("Please provide both a resume and job description.", "error");
+       return;
+    }
 
     try {
-      const data = await resumeService.upload(file);
-      setResumeId(data.id);
-      addToast('Resume uploaded successfully', 'success');
-      setStep("Upload complete ✅");
+      // Step 1: Upload
+      setStatus(STATUS.UPLOADING);
+      const uploadData = await resumeService.upload(file);
+      const newResumeId = uploadData.id;
+      setResumeId(newResumeId);
+
+      // Step 2: Analyze
+      setStatus(STATUS.PROCESSING);
+      const analysisData = await resumeService.analyze(newResumeId, jobDescription);
+      setAnalysis(analysisData);
+      setStatus(STATUS.COMPLETED);
+      addToast('Analysis completed successfully!', 'success');
+      
     } catch (err) {
-      addToast(err.response?.data?.detail || 'Upload failed', 'error');
-      setStep("");
-    } finally {
-      setLoading(false);
+      setStatus(STATUS.FAILED);
+      setErrorMsg(err.response?.data?.detail || 'The intelligence extraction encountered an error.');
     }
-  }, [file, addToast]);
-
-  const handleAnalyze = useCallback(async (e) => {
-    e.preventDefault();
-    if (!resumeId || !jobDescription) return;
-
-    setLoading(true);
-    setStep("Extracting resume...");
-
-    try {
-      setTimeout(() => setStep("Analyzing job match..."), 800);
-      setTimeout(() => setStep("Generating insights..."), 1600);
-
-      const data = await resumeService.analyze(resumeId, jobDescription);
-      setAnalysis(data);
-      addToast('Analysis complete!', 'success');
-      setStep("Analysis complete ✅");
-    } catch (err) {
-      addToast(err.response?.data?.detail || 'Analysis failed', 'error');
-      setStep("");
-    } finally {
-      setLoading(false);
-    }
-  }, [resumeId, jobDescription, addToast]);
+  };
 
   const handleDownload = useCallback(async () => {
     try {
-      setStep("Generating Report...");
+      addToast('Preparing report for download...', 'info');
       const data = await resumeService.getReport(resumeId);
       const url = window.URL.createObjectURL(new Blob([data]));
       const link = document.createElement('a');
@@ -84,26 +116,15 @@ export default function CandidateOverview() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      addToast('Report downloaded', 'success');
     } catch (err) {
       addToast('Failed to download report', 'error');
-    } finally {
-      setStep("");
     }
   }, [resumeId, addToast]);
 
   return (
     <MotionWrapper variant="page" className="p-4 md:p-8 lg:p-10 max-w-[1600px] mx-auto relative space-y-10">
-      {/* PREMIUM LOADER */}
-      {loading && (
-        <div className="fixed inset-0 bg-[var(--background)]/80 backdrop-blur-md flex flex-col items-center justify-center z-[100] animate-in fade-in duration-500">
-          <div className="relative">
-            <div className="w-24 h-24 border-4 border-[var(--accent)]/20 border-t-[var(--accent)] rounded-full animate-spin"></div>
-            <Sparkles className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[var(--accent)] animate-pulse" size={32} />
-          </div>
-          <p className="mt-8 text-xl text-white font-medium tracking-widest uppercase animate-pulse">{step}</p>
-        </div>
-      )}
+      
+      <AIProcessing isProcessing={status === STATUS.PROCESSING} />
 
       {/* Hero Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -112,191 +133,157 @@ export default function CandidateOverview() {
             Welcome back, {user?.full_name?.split(' ')[0] || 'Candidate'} <Sparkles className="text-[var(--accent)]" />
           </h2>
           <p className="text-[var(--text-muted)] text-base max-w-lg">
-            Upload your resume and the target job description to get AI-powered compatibility insights.
+            Upload your resume and the target job description to run a comprehensive ATS intelligence match.
           </p>
         </div>
-        {(analysis || resumeId) && (
+        {(status === STATUS.COMPLETED || status === STATUS.FAILED) && (
           <button 
             onClick={handleReset}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-[var(--text-muted)] hover:text-white transition-all text-sm border border-[var(--border)]"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--surface-elevated)] hover:bg-white/10 text-white transition-all text-sm border border-[var(--border)] hover-lift"
           >
-            <RefreshCw size={16} /> <span>Start Fresh</span>
+            <RefreshCw size={16} /> <span>New Analysis</span>
           </button>
         )}
       </div>
 
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* LEFT SIDE - Inputs */}
-        <div className="lg:col-span-5 space-y-8">
-          <GlassCard glow className="p-8">
-            <h3 className="text-xl font-bold mb-6 text-white flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/10 flex items-center justify-center border border-[var(--primary)]/20">
-                <Plus className="text-[var(--primary)]" size={20} />
-              </div>
-              Step 1: Upload Resume
-            </h3>
-
-            <form onSubmit={handleUpload}>
-              <div className={`border-2 border-dashed rounded-3xl p-10 text-center transition-all cursor-pointer bg-black/20 group ${resumeId ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-[var(--border)] hover:border-[var(--accent)]/50'}`}>
-                <input
-                  type="file"
-                  accept=".pdf"
-                  onChange={(e) => setFile(e.target.files[0])}
-                  className="hidden"
-                  id="resume-upload"
-                  disabled={loading || !!resumeId}
-                />
-                <label htmlFor="resume-upload" className={`cursor-pointer flex flex-col items-center gap-5 ${resumeId ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'}`}>
-                  {resumeId ? (
-                     <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
-                        <CheckCircle size={32} className="text-emerald-500" />
-                     </div>
-                  ) : (
-                    <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center border border-[var(--border)] group-hover:border-[var(--accent)]/40 transition-all">
-                       <UploadCloud size={32} className="text-[var(--text-muted)] group-hover:text-[var(--accent)]" />
-                    </div>
-                  )}
-                  <div className="space-y-2">
-                    <span className={`block text-lg font-semibold ${resumeId ? 'text-emerald-400' : 'text-gray-300'}`}>
-                      {file ? file.name : "Choose PDF Document"}
-                    </span>
-                    {!file && <span className="text-xs text-[var(--text-muted)] uppercase tracking-widest">Supports PDF up to 10MB</span>}
-                  </div>
-                </label>
-              </div>
-
-              {!resumeId && (
-                <button
-                  type="submit"
-                  disabled={!file || loading}
-                  className="w-full mt-6 py-4 premium-gradient-bg border border-[var(--primary)]/30 text-[var(--primary-foreground)] rounded-2xl transition-all disabled:opacity-50 font-bold text-lg hover:brightness-110 active:scale-[0.98]"
-                >
-                  Process Intelligence
-                </button>
-              )}
-            </form>
-          </GlassCard>
-
-          <GlassCard className={`p-8 transition-all duration-700 ${resumeId ? 'opacity-100 translate-y-0' : 'opacity-40 translate-y-4 blur-[2px] pointer-events-none'}`}>
-            <h3 className="text-xl font-bold mb-6 text-white flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
-                <FileText className="text-purple-400" size={20} />
-              </div>
-              Step 2: Job Context
-            </h3>
-
-            <form onSubmit={handleAnalyze}>
-              <div className="relative group">
-                <textarea
-                  className="w-full h-56 p-5 rounded-2xl bg-[var(--surface-elevated)] border border-[var(--border)] focus:border-[var(--accent)]/40 outline-none resize-none text-gray-300 text-base transition-all placeholder:text-[var(--text-muted)] leading-relaxed"
-                  placeholder="Paste the job description here..."
-                  value={jobDescription}
-                  onChange={(e) => setJobDescription(e.target.value)}
-                  disabled={!resumeId || loading}
-                />
-                <div className="absolute bottom-4 right-4 text-[10px] text-[var(--text-muted)] font-mono tracking-widest uppercase">
-                  {jobDescription.length} characters
+      {status === STATUS.FAILED ? (
+        <ErrorState 
+          title="Analysis Failed" 
+          message={errorMsg}
+          onRetry={handleReset} 
+        />
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* LEFT SIDE - Inputs */}
+          <div className="lg:col-span-5 space-y-8">
+            <GlassCard glow className="p-8">
+              <h3 className="text-xl font-bold mb-6 text-white flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/10 flex items-center justify-center border border-[var(--primary)]/20 shadow-inner">
+                  <Plus className="text-[var(--primary)]" size={20} />
                 </div>
-              </div>
+                Provide Context
+              </h3>
 
-              <button
-                type="submit"
-                disabled={!resumeId || jobDescription.length < 50 || loading}
-                className="w-full mt-6 py-4 bg-white/[0.03] hover:bg-white/[0.07] border border-[var(--border)] text-white font-bold rounded-2xl transition-all shadow-xl disabled:opacity-20 hover-lift active:scale-[0.98]"
-              >
-                <span className="flex items-center justify-center gap-3">
-                  Begin AI Matching <Sparkles size={20} className="text-[var(--accent)]" />
-                </span>
-              </button>
-            </form>
-          </GlassCard>
-        </div>
-
-        {/* RIGHT SIDE - Results */}
-        <div className="lg:col-span-7">
-          {!analysis ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
-               <GlassCard className="flex flex-col items-center justify-center p-12 text-center h-[300px]">
-                 <Search size={48} className="text-[var(--border)] mb-6" />
-                 <h4 className="text-xl font-bold text-white mb-2">Awaiting Analysis</h4>
-                 <p className="text-[var(--text-muted)] text-sm">Upload your resume and JD to unlock insights.</p>
-               </GlassCard>
-               <GlassCard className="flex flex-col items-center justify-center p-12 text-center h-[300px]">
-                 <Activity size={48} className="text-[var(--border)] mb-6" />
-                 <h4 className="text-xl font-bold text-white mb-2">Live Tracking</h4>
-                 <p className="text-[var(--text-muted)] text-sm">Your activity timeline will appear here.</p>
-               </GlassCard>
-            </div>
-          ) : (
-            <MotionWrapper variant="slideUp" delay={0.2} className="space-y-8">
-              {/* Analytics Header Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                 <MetricCard title="Match Potential" value={analysis.ats_score} suffix="%" icon={Target} />
-                 <MetricCard title="Skills Found" value={analysis.matched_keywords.length} icon={Zap} />
-                 <MetricCard title="Improvement Areas" value={analysis.missing_keywords.length} icon={AlertTriangle} />
-              </div>
-
-              <MemoizedScoreCard score={analysis.ats_score} />
-              
-              <GlassCard className="p-10 space-y-10">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 border-b border-[var(--border)] pb-8">
-                  <div>
-                    <h3 className="text-2xl font-bold text-white tracking-tight">Intelligence Report</h3>
-                    <p className="text-sm text-[var(--text-muted)] mt-2">Personalized insights based on your professional profile.</p>
-                  </div>
-                  <button
-                    onClick={handleDownload}
-                    className="w-full sm:w-auto text-sm flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 px-6 py-3 rounded-2xl border border-[var(--border)] transition-all text-gray-300 font-bold hover-lift"
+              <form onSubmit={handleWorkflow} className="space-y-8">
+                {/* Drag and Drop Zone */}
+                <div className="space-y-3">
+                  <label className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">1. Resume Document</label>
+                  <div 
+                    onDragOver={onDragOver}
+                    onDragLeave={onDragLeave}
+                    onDrop={onDrop}
+                    className={`border-2 border-dashed rounded-[32px] p-8 text-center transition-all bg-[var(--surface-elevated)] relative overflow-hidden group
+                      ${isDragActive ? 'border-[var(--primary)] bg-[var(--primary)]/5' : 'border-[var(--border)] hover:border-[var(--primary)]/40'}
+                      ${status === STATUS.UPLOADING || status === STATUS.COMPLETED ? 'opacity-50 pointer-events-none' : ''}
+                    `}
                   >
-                    <Download size={18} /> Export Intelligence
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      onChange={handleFileChange}
+                      className="hidden"
+                      id="resume-upload"
+                      disabled={status !== STATUS.EMPTY && status !== STATUS.SELECTED}
+                    />
+                    
+                    {file ? (
+                      <div className="flex items-center justify-between bg-white/5 p-4 rounded-2xl border border-white/10">
+                        <div className="flex items-center gap-4 text-left">
+                           <div className="w-12 h-12 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-500 border border-rose-500/20">
+                             <FileIcon size={24} />
+                           </div>
+                           <div>
+                             <p className="text-sm font-bold text-white max-w-[200px] truncate">{file.name}</p>
+                             <p className="text-[10px] text-[var(--text-muted)] font-mono uppercase">{(file.size / 1024 / 1024).toFixed(2)} MB • PDF</p>
+                           </div>
+                        </div>
+                        {status === STATUS.SELECTED && (
+                          <label htmlFor="resume-upload" className="px-3 py-1.5 text-xs font-bold text-[var(--primary)] bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20 rounded-lg cursor-pointer transition-colors">
+                            Change
+                          </label>
+                        )}
+                      </div>
+                    ) : (
+                      <label htmlFor="resume-upload" className="cursor-pointer flex flex-col items-center gap-4 py-4">
+                        <div className={`w-16 h-16 rounded-full flex items-center justify-center border transition-all ${isDragActive ? 'bg-[var(--primary)]/20 border-[var(--primary)] text-[var(--primary)] shadow-[0_0_20px_rgba(59,130,246,0.3)]' : 'bg-white/5 border-[var(--border)] text-[var(--text-muted)] group-hover:text-white'}`}>
+                          <UploadCloud size={32} />
+                        </div>
+                        <div className="space-y-1">
+                          <span className="block text-base font-bold text-gray-200 group-hover:text-white transition-colors">
+                            Drag & Drop PDF
+                          </span>
+                          <span className="text-xs text-[var(--text-muted)] font-medium">or click to browse local files</span>
+                        </div>
+                      </label>
+                    )}
+                  </div>
+                </div>
+
+                {/* Job Description Textarea */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">2. Target Job Description</label>
+                  </div>
+                  <div className="relative group">
+                    <textarea
+                      className="w-full h-48 p-5 rounded-[24px] bg-[var(--surface-elevated)] border border-[var(--border)] focus:border-[var(--primary)]/50 focus:bg-white/5 outline-none resize-none text-white text-sm transition-all placeholder:text-[var(--text-muted)] leading-relaxed custom-scrollbar"
+                      placeholder="Paste the full job description here to enable the neural matching engine..."
+                      value={jobDescription}
+                      onChange={(e) => setJobDescription(e.target.value)}
+                      disabled={status !== STATUS.EMPTY && status !== STATUS.SELECTED}
+                    />
+                    <div className="absolute bottom-4 right-4 text-[10px] text-[var(--text-muted)] font-mono tracking-widest uppercase bg-[var(--surface-elevated)] px-2 py-1 rounded-md border border-[var(--border)]">
+                      {jobDescription.length} char
+                    </div>
+                  </div>
+                </div>
+
+                {status === STATUS.EMPTY || status === STATUS.SELECTED ? (
+                  <button
+                    type="submit"
+                    disabled={!file || jobDescription.length < 50}
+                    className="w-full py-4 premium-gradient-bg border border-[var(--primary)]/30 text-white rounded-2xl transition-all disabled:opacity-20 font-bold text-base hover-lift shadow-[0_10px_30px_rgba(0,243,255,0.15)] flex items-center justify-center gap-2"
+                  >
+                    Run Intelligence Sync <Sparkles size={18} className="text-[var(--accent)]" />
                   </button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                  <div className="space-y-6">
-                    <h4 className="text-xs font-bold text-emerald-500 uppercase tracking-[0.3em] flex items-center gap-2">
-                       Matched Proficiency
-                    </h4>
-                    <div className="flex flex-wrap gap-2">
-                      {analysis.matched_keywords.map((kw, i) => (
-                        <Badge key={i} variant="success">{kw}</Badge>
-                      ))}
-                      {analysis.matched_keywords.length === 0 && (
-                        <div className="text-[var(--text-muted)] text-sm italic py-2">No direct keyword matches found.</div>
-                      )}
-                    </div>
+                ) : (
+                  <div className="w-full py-4 bg-white/5 border border-white/10 text-gray-400 rounded-2xl font-bold text-base flex items-center justify-center gap-3 cursor-not-allowed">
+                    {status === STATUS.UPLOADING && 'Uploading Document...'}
+                    {status === STATUS.PROCESSING && 'Processing Insights...'}
+                    {status === STATUS.COMPLETED && 'Analysis Active'}
                   </div>
+                )}
+              </form>
+            </GlassCard>
+          </div>
 
-                  <div className="space-y-6">
-                    <h4 className="text-xs font-bold text-rose-400 uppercase tracking-[0.3em] flex items-center gap-2">
-                       Critical Skill Gaps
-                    </h4>
-                    <div className="flex flex-wrap gap-2">
-                      {analysis.missing_keywords.map((kw, i) => (
-                        <Badge key={i} variant="danger">{kw}</Badge>
-                      ))}
-                      {analysis.missing_keywords.length === 0 && (
-                        <div className="text-[var(--text-muted)] text-sm italic py-2">Perfect skill alignment detected!</div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-8 rounded-[32px] bg-gradient-to-br from-[var(--accent)]/5 to-transparent border border-[var(--accent)]/10 relative group overflow-hidden">
-                  <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-[var(--accent)]/5 blur-3xl rounded-full"></div>
-                  <h4 className="text-xs font-bold text-[var(--accent)] mb-4 uppercase tracking-[0.2em] flex items-center gap-2">
-                     Strategic Recommendations
-                  </h4>
-                  <p className="text-base text-gray-300 leading-relaxed font-serif italic relative z-10">
-                    "{analysis.recommendations}"
-                  </p>
-                </div>
-              </GlassCard>
-            </MotionWrapper>
-          )}
+          {/* RIGHT SIDE - Results */}
+          <div className="lg:col-span-7 h-full">
+            {status !== STATUS.COMPLETED ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full min-h-[400px]">
+                 <GlassCard className="flex flex-col items-center justify-center p-12 text-center">
+                   <Search size={48} className="text-[var(--border)] mb-6" />
+                   <h4 className="text-xl font-bold text-white mb-2">Awaiting Analysis</h4>
+                   <p className="text-[var(--text-muted)] text-sm">Provide context to unlock insights.</p>
+                 </GlassCard>
+                 <GlassCard className="flex flex-col items-center justify-center p-12 text-center">
+                   <Activity size={48} className="text-[var(--border)] mb-6" />
+                   <h4 className="text-xl font-bold text-white mb-2">Live Tracking</h4>
+                   <p className="text-[var(--text-muted)] text-sm">Metrics will compile in real-time.</p>
+                 </GlassCard>
+              </div>
+            ) : (
+              <MotionWrapper variant="slideUp" delay={0.1} className="space-y-8">
+                {/* Embedded Score Card with Analysis Details */}
+                <MemoizedScoreCard analysis={analysis} />
+                
+                {/* Download/Share Report Card */}
+                <ReportCard onDownload={handleDownload} />
+              </MotionWrapper>
+            )}
+          </div>
         </div>
-      </div>
+      )}
       
       {toasts.map((t) => (
         <Toast key={t.id} {...t} onClose={() => removeToast(t.id)} />
