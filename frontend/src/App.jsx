@@ -16,6 +16,7 @@ const Overview = lazy(() => import('./pages/Overview'));
 const TalentPool = lazy(() => import('./pages/TalentPool'));
 const Preferences = lazy(() => import('./pages/Preferences'));
 const Profile = lazy(() => import('./pages/Profile'));
+const ResumeCompare = lazy(() => import('./pages/ResumeCompare'));
 
 function GlobalAlert() {
   const { systemAlert } = useApp();
@@ -75,6 +76,7 @@ function AppRoutes() {
             <Route index element={<CandidateOverview />} />
             <Route path="preferences" element={<Preferences />} />
             <Route path="profile" element={<Profile />} />
+            <Route path="compare" element={<ResumeCompare />} />
           </Route>
 
           {/* Recruiter Routes */}
