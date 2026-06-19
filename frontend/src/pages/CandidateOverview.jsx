@@ -1,5 +1,9 @@
 import { useState, useCallback, memo } from 'react';
-import { UploadCloud, File as FileIcon, Search, Plus, RefreshCw, Sparkles, Activity, FileText } from 'lucide-react';
+import {
+  UploadCloud, File as FileIcon, Search, Plus, RefreshCw,
+  Sparkles, Activity, FileText, GitCompare, Target, TrendingUp, Brain
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import ATSScoreCard from '../components/ui/ATSScoreCard';
 import GlassCard from '../components/ui/GlassCard';
@@ -7,11 +11,16 @@ import MotionWrapper from '../components/ui/MotionWrapper';
 import AIProcessing from '../components/ui/AIProcessing';
 import ErrorState from '../components/ui/ErrorState';
 import ReportCard from '../components/ui/ReportCard';
+import SkillRadar from '../components/ui/SkillRadar';
+import CareerInsight from '../components/ui/CareerInsight';
 import { resumeService } from '../services/resumeService';
 import Toast from '../components/ui/Toast';
 import useToast from '../hooks/useToast';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const MemoizedScoreCard = memo(ATSScoreCard);
+const MemoizedSkillRadar = memo(SkillRadar);
+const MemoizedCareerInsight = memo(CareerInsight);
 
 const STATUS = {
   EMPTY: 'EMPTY',
@@ -19,11 +28,55 @@ const STATUS = {
   UPLOADING: 'UPLOADING',
   PROCESSING: 'PROCESSING',
   COMPLETED: 'COMPLETED',
-  FAILED: 'FAILED'
+  FAILED: 'FAILED',
 };
+
+const TABS = [
+  { id: 'health', label: 'Resume Health', icon: Target },
+  { id: 'skills', label: 'Skill Radar', icon: TrendingUp },
+  { id: 'career', label: 'Career AI', icon: Brain },
+];
+
+// ─── AI Health Metrics Bar ─────────────────────────────────────────────────────
+function HealthMetrics({ analysis }) {
+  if (!analysis) return null;
+  const score = analysis.ats_score ?? 0;
+  const matchedPct = analysis.matched_keywords?.length
+    ? Math.min(100, Math.round((analysis.matched_keywords.length / (analysis.matched_keywords.length + (analysis.missing_keywords?.length || 0))) * 100))
+    : 0;
+  const qualityScore = Math.min(100, Math.round((score * 0.6) + (analysis.strengths?.length || 0) * 8));
+
+  const metrics = [
+    { label: 'ATS Score', value: score, color: score >= 80 ? '#10b981' : score >= 50 ? '#f59e0b' : '#f43f5e', suffix: '%' },
+    { label: 'Keyword Match', value: matchedPct, color: '#3b82f6', suffix: '%' },
+    { label: 'Resume Quality', value: qualityScore, color: '#8b5cf6', suffix: '%' },
+    { label: 'Strengths Found', value: Math.min(analysis.strengths?.length || 0, 5), color: '#00f3ff', suffix: `/${Math.min((analysis.strengths?.length || 0) + 2, 7)}` },
+  ];
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+      {metrics.map((m, i) => (
+        <motion.div
+          key={m.label}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: i * 0.1 }}
+          className="card-glass rounded-2xl p-4 text-center relative overflow-hidden"
+        >
+          <div className="absolute inset-0 opacity-10" style={{ background: `radial-gradient(circle at 50% 0%, ${m.color}, transparent 70%)` }} />
+          <p className="text-2xl font-black relative z-10" style={{ color: m.color }}>
+            {m.value}{m.suffix}
+          </p>
+          <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-widest mt-1 relative z-10">{m.label}</p>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
 
 export default function CandidateOverview() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [file, setFile] = useState(null);
   const [jobDescription, setJobDescription] = useState('');
   const [resumeId, setResumeId] = useState(null);
@@ -31,7 +84,8 @@ export default function CandidateOverview() {
   const [status, setStatus] = useState(STATUS.EMPTY);
   const [errorMsg, setErrorMsg] = useState('');
   const [isDragActive, setIsDragActive] = useState(false);
-  
+  const [activeTab, setActiveTab] = useState('health');
+
   const { toasts, addToast, removeToast } = useToast();
 
   const handleReset = () => {
@@ -41,13 +95,12 @@ export default function CandidateOverview() {
     setAnalysis(null);
     setStatus(STATUS.EMPTY);
     setErrorMsg('');
+    setActiveTab('health');
   };
 
   const onDragOver = useCallback((e) => {
     e.preventDefault();
-    if (status === STATUS.EMPTY || status === STATUS.SELECTED) {
-      setIsDragActive(true);
-    }
+    if (status === STATUS.EMPTY || status === STATUS.SELECTED) setIsDragActive(true);
   }, [status]);
 
   const onDragLeave = useCallback((e) => {
@@ -59,8 +112,7 @@ export default function CandidateOverview() {
     e.preventDefault();
     setIsDragActive(false);
     if (status !== STATUS.EMPTY && status !== STATUS.SELECTED) return;
-
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+    if (e.dataTransfer.files?.length > 0) {
       const droppedFile = e.dataTransfer.files[0];
       if (droppedFile.type === 'application/pdf') {
         setFile(droppedFile);
@@ -72,7 +124,7 @@ export default function CandidateOverview() {
   }, [status, addToast]);
 
   const handleFileChange = (e) => {
-    if (e.target.files && e.target.files.length > 0) {
+    if (e.target.files?.length > 0) {
       setFile(e.target.files[0]);
       setStatus(STATUS.SELECTED);
     }
@@ -81,24 +133,20 @@ export default function CandidateOverview() {
   const handleWorkflow = async (e) => {
     e.preventDefault();
     if (!file || !jobDescription) {
-       addToast("Please provide both a resume and job description.", "error");
-       return;
+      addToast('Please provide both a resume and job description.', 'error');
+      return;
     }
-
     try {
-      // Step 1: Upload
       setStatus(STATUS.UPLOADING);
       const uploadData = await resumeService.upload(file);
       const newResumeId = uploadData.id;
       setResumeId(newResumeId);
 
-      // Step 2: Analyze
       setStatus(STATUS.PROCESSING);
       const analysisData = await resumeService.analyze(newResumeId, jobDescription);
       setAnalysis(analysisData);
       setStatus(STATUS.COMPLETED);
-      addToast('Analysis completed successfully!', 'success');
-      
+      addToast('Intelligence analysis complete!', 'success');
     } catch (err) {
       setStatus(STATUS.FAILED);
       setErrorMsg(err.response?.data?.detail || 'The intelligence extraction encountered an error.');
@@ -116,45 +164,54 @@ export default function CandidateOverview() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    } catch (err) {
+    } catch {
       addToast('Failed to download report', 'error');
     }
   }, [resumeId, addToast]);
 
+  const handleCompare = () => {
+    navigate('/candidate/compare', { state: { analysis, resumeId } });
+  };
+
   return (
     <MotionWrapper variant="page" className="p-4 md:p-8 lg:p-10 max-w-[1600px] mx-auto relative space-y-10">
-      
       <AIProcessing isProcessing={status === STATUS.PROCESSING} />
 
-      {/* Hero Section */}
+      {/* Hero */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div className="space-y-2">
           <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight flex items-center gap-3">
             Welcome back, {user?.full_name?.split(' ')[0] || 'Candidate'} <Sparkles className="text-[var(--accent)]" />
           </h2>
           <p className="text-[var(--text-muted)] text-base max-w-lg">
-            Upload your resume and the target job description to run a comprehensive ATS intelligence match.
+            Upload your resume and target job description for a comprehensive AI career intelligence report.
           </p>
         </div>
         {(status === STATUS.COMPLETED || status === STATUS.FAILED) && (
-          <button 
-            onClick={handleReset}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--surface-elevated)] hover:bg-white/10 text-white transition-all text-sm border border-[var(--border)] hover-lift"
-          >
-            <RefreshCw size={16} /> <span>New Analysis</span>
-          </button>
+          <div className="flex items-center gap-3">
+            {status === STATUS.COMPLETED && (
+              <button
+                onClick={handleCompare}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20 text-[var(--primary)] transition-all text-sm border border-[var(--primary)]/20 hover-lift font-bold"
+              >
+                <GitCompare size={16} /> Compare Resume
+              </button>
+            )}
+            <button
+              onClick={handleReset}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--surface-elevated)] hover:bg-white/10 text-white transition-all text-sm border border-[var(--border)] hover-lift"
+            >
+              <RefreshCw size={16} /> <span>New Analysis</span>
+            </button>
+          </div>
         )}
       </div>
 
       {status === STATUS.FAILED ? (
-        <ErrorState 
-          title="Analysis Failed" 
-          message={errorMsg}
-          onRetry={handleReset} 
-        />
+        <ErrorState title="Analysis Failed" message={errorMsg} onRetry={handleReset} />
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* LEFT SIDE - Inputs */}
+          {/* LEFT — Input Form */}
           <div className="lg:col-span-5 space-y-8">
             <GlassCard glow className="p-8">
               <h3 className="text-xl font-bold mb-6 text-white flex items-center gap-3">
@@ -165,10 +222,10 @@ export default function CandidateOverview() {
               </h3>
 
               <form onSubmit={handleWorkflow} className="space-y-8">
-                {/* Drag and Drop Zone */}
+                {/* Drop Zone */}
                 <div className="space-y-3">
                   <label className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">1. Resume Document</label>
-                  <div 
+                  <div
                     onDragOver={onDragOver}
                     onDragLeave={onDragLeave}
                     onDrop={onDrop}
@@ -185,17 +242,16 @@ export default function CandidateOverview() {
                       id="resume-upload"
                       disabled={status !== STATUS.EMPTY && status !== STATUS.SELECTED}
                     />
-                    
                     {file ? (
                       <div className="flex items-center justify-between bg-white/5 p-4 rounded-2xl border border-white/10">
                         <div className="flex items-center gap-4 text-left">
-                           <div className="w-12 h-12 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-500 border border-rose-500/20">
-                             <FileIcon size={24} />
-                           </div>
-                           <div>
-                             <p className="text-sm font-bold text-white max-w-[200px] truncate">{file.name}</p>
-                             <p className="text-[10px] text-[var(--text-muted)] font-mono uppercase">{(file.size / 1024 / 1024).toFixed(2)} MB • PDF</p>
-                           </div>
+                          <div className="w-12 h-12 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-500 border border-rose-500/20">
+                            <FileIcon size={24} />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-white max-w-[200px] truncate">{file.name}</p>
+                            <p className="text-[10px] text-[var(--text-muted)] font-mono uppercase">{(file.size / 1024 / 1024).toFixed(2)} MB • PDF</p>
+                          </div>
                         </div>
                         {status === STATUS.SELECTED && (
                           <label htmlFor="resume-upload" className="px-3 py-1.5 text-xs font-bold text-[var(--primary)] bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20 rounded-lg cursor-pointer transition-colors">
@@ -209,9 +265,7 @@ export default function CandidateOverview() {
                           <UploadCloud size={32} />
                         </div>
                         <div className="space-y-1">
-                          <span className="block text-base font-bold text-gray-200 group-hover:text-white transition-colors">
-                            Drag & Drop PDF
-                          </span>
+                          <span className="block text-base font-bold text-gray-200 group-hover:text-white transition-colors">Drag & Drop PDF</span>
                           <span className="text-xs text-[var(--text-muted)] font-medium">or click to browse local files</span>
                         </div>
                       </label>
@@ -219,11 +273,9 @@ export default function CandidateOverview() {
                   </div>
                 </div>
 
-                {/* Job Description Textarea */}
+                {/* Job Description */}
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">2. Target Job Description</label>
-                  </div>
+                  <label className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">2. Target Job Description</label>
                   <div className="relative group">
                     <textarea
                       className="w-full h-48 p-5 rounded-[24px] bg-[var(--surface-elevated)] border border-[var(--border)] focus:border-[var(--primary)]/50 focus:bg-white/5 outline-none resize-none text-white text-sm transition-all placeholder:text-[var(--text-muted)] leading-relaxed custom-scrollbar"
@@ -257,34 +309,76 @@ export default function CandidateOverview() {
             </GlassCard>
           </div>
 
-          {/* RIGHT SIDE - Results */}
-          <div className="lg:col-span-7 h-full">
+          {/* RIGHT — Results Panel */}
+          <div className="lg:col-span-7">
             {status !== STATUS.COMPLETED ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full min-h-[400px]">
-                 <GlassCard className="flex flex-col items-center justify-center p-12 text-center">
-                   <Search size={48} className="text-[var(--border)] mb-6" />
-                   <h4 className="text-xl font-bold text-white mb-2">Awaiting Analysis</h4>
-                   <p className="text-[var(--text-muted)] text-sm">Provide context to unlock insights.</p>
-                 </GlassCard>
-                 <GlassCard className="flex flex-col items-center justify-center p-12 text-center">
-                   <Activity size={48} className="text-[var(--border)] mb-6" />
-                   <h4 className="text-xl font-bold text-white mb-2">Live Tracking</h4>
-                   <p className="text-[var(--text-muted)] text-sm">Metrics will compile in real-time.</p>
-                 </GlassCard>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 min-h-[400px]">
+                <GlassCard className="flex flex-col items-center justify-center p-12 text-center">
+                  <Search size={48} className="text-[var(--border)] mb-6" />
+                  <h4 className="text-xl font-bold text-white mb-2">Awaiting Analysis</h4>
+                  <p className="text-[var(--text-muted)] text-sm">Provide context to unlock career intelligence.</p>
+                </GlassCard>
+                <GlassCard className="flex flex-col items-center justify-center p-12 text-center">
+                  <Activity size={48} className="text-[var(--border)] mb-6" />
+                  <h4 className="text-xl font-bold text-white mb-2">Live Tracking</h4>
+                  <p className="text-[var(--text-muted)] text-sm">Metrics will compile in real-time.</p>
+                </GlassCard>
               </div>
             ) : (
-              <MotionWrapper variant="slideUp" delay={0.1} className="space-y-8">
-                {/* Embedded Score Card with Analysis Details */}
-                <MemoizedScoreCard analysis={analysis} />
-                
-                {/* Download/Share Report Card */}
-                <ReportCard onDownload={handleDownload} />
+              <MotionWrapper variant="slideUp" delay={0.1} className="space-y-6">
+                {/* AI Health Metrics */}
+                <HealthMetrics analysis={analysis} />
+
+                {/* Intelligence Tabs */}
+                <div>
+                  {/* Tab Bar */}
+                  <div className="flex gap-1 p-1.5 rounded-2xl bg-white/[0.04] border border-[var(--border)] mb-6">
+                    {TABS.map((tab) => {
+                      const Icon = tab.icon;
+                      const isActive = activeTab === tab.id;
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => setActiveTab(tab.id)}
+                          className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-bold transition-all ${
+                            isActive
+                              ? 'bg-[var(--primary)] text-white shadow-[0_4px_15px_rgba(59,130,246,0.3)]'
+                              : 'text-[var(--text-muted)] hover:text-white hover:bg-white/5'
+                          }`}
+                        >
+                          <Icon size={15} />
+                          <span className="hidden sm:inline">{tab.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Tab Content */}
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={activeTab}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      {activeTab === 'health' && (
+                        <div className="space-y-6">
+                          <MemoizedScoreCard analysis={analysis} />
+                          <ReportCard onDownload={handleDownload} />
+                        </div>
+                      )}
+                      {activeTab === 'skills' && <MemoizedSkillRadar analysis={analysis} />}
+                      {activeTab === 'career' && <MemoizedCareerInsight analysis={analysis} />}
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
               </MotionWrapper>
             )}
           </div>
         </div>
       )}
-      
+
       {toasts.map((t) => (
         <Toast key={t.id} {...t} onClose={() => removeToast(t.id)} />
       ))}
