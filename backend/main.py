@@ -63,3 +63,29 @@ def startup_event():
 @app.get("/")
 def read_root():
     return {"message": "Welcome to AI Resume Analyzer API"}
+
+@app.get("/health")
+def health_check():
+    from database import SessionLocal
+    from sqlalchemy.sql import text
+    
+    db_status = "error"
+    ai_status = "ok" if settings.GEMINI_API_KEY else "missing"
+    
+    try:
+        db = SessionLocal()
+        db.execute(text("SELECT 1"))
+        db_status = "ok"
+    except Exception as e:
+        logger.error(f"Health check DB failure: {str(e)}")
+    finally:
+        db.close()
+        
+    status = "ok" if db_status == "ok" else "degraded"
+    
+    return {
+        "status": status,
+        "database": db_status,
+        "ai_service": ai_status,
+        "service": "AI Resume Analyzer"
+    }
