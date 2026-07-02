@@ -3,6 +3,7 @@ version: '3.8'
 services:
   db:
     image: postgres:15-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -19,6 +20,7 @@ services:
 
   redis:
     image: redis:alpine
+    restart: unless-stopped
     ports:
       - "6379:6379"
     volumes:
@@ -31,6 +33,7 @@ services:
 
   backend:
     build: ./backend
+    restart: unless-stopped
     command: sh -c "python prestart.py && gunicorn -w 4 -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:8000"
     ports:
       - "8000:8000"
@@ -41,9 +44,15 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   celery_worker:
     build: ./backend
+    restart: unless-stopped
     command: sh -c "python -c 'import time; from sqlalchemy import create_engine; from config import settings; engine=create_engine(settings.DATABASE_URL); [time.sleep(1) for _ in range(30) if not engine.connect()]' && celery -A celery_app worker --loglevel=info --concurrency=4"
     env_file:
       - .env
@@ -55,10 +64,17 @@ services:
 
   frontend:
     build: ./frontend
+    restart: unless-stopped
     ports:
       - "3000:3000"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
 volumes:
   postgres_data:
