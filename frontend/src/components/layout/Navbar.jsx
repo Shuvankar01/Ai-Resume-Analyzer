@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import NotificationCenter from '../ui/NotificationCenter';
+
 export default function Navbar() {
   const { user, isRecruiter, logout } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -75,10 +77,7 @@ export default function Navbar() {
           </div>
         </div>
 
-        <button className="relative w-10 h-10 rounded-full flex items-center justify-center hover:bg-[var(--surface-elevated)] text-gray-400 hover:text-white transition-colors border border-transparent hover:border-[var(--border)]">
-          <Bell size={20} />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full border border-[var(--background)] animate-pulse"></span>
-        </button>
+        <NotificationCenter />
 
         <div className="relative" ref={menuRef}>
           <button 
