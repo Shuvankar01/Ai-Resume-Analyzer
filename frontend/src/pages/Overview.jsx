@@ -8,6 +8,8 @@ import MotionWrapper from '../components/ui/MotionWrapper';
 import Badge from '../components/ui/Badge';
 import AnalyticsChart from '../components/ui/AnalyticsChart';
 import EmptyState from '../components/ui/EmptyState';
+import SystemStatus from '../components/ui/SystemStatus';
+import ActivityTimeline from '../components/ui/ActivityTimeline';
 import { resumeService } from '../services/resumeService';
 import Toast from '../components/ui/Toast';
 import useToast from '../hooks/useToast';
@@ -232,6 +234,16 @@ export default function Overview() {
             />
           )}
         </GlassCard>
+      </div>
+
+      {/* System Health & Activity Feed */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="lg:col-span-4">
+          <SystemStatus />
+        </div>
+        <div className="lg:col-span-8">
+          <ActivityTimeline type="recruiter" />
+        </div>
       </div>
 
       {/* Candidate Table */}

@@ -8,7 +8,9 @@ import { useAuth } from '../hooks/useAuth';
 import ATSScoreCard from '../components/ui/ATSScoreCard';
 import GlassCard from '../components/ui/GlassCard';
 import MotionWrapper from '../components/ui/MotionWrapper';
-import AIProcessing from '../components/ui/AIProcessing';
+import AnalysisTimeline from '../components/ui/AnalysisTimeline';
+import ActivityTimeline from '../components/ui/ActivityTimeline';
+import ImprovementRoadmap from '../components/ui/ImprovementRoadmap';
 import ErrorState from '../components/ui/ErrorState';
 import ReportCard from '../components/ui/ReportCard';
 import SkillRadar from '../components/ui/SkillRadar';
@@ -82,11 +84,42 @@ export default function CandidateOverview() {
   const [resumeId, setResumeId] = useState(null);
   const [analysis, setAnalysis] = useState(null);
   const [status, setStatus] = useState(STATUS.EMPTY);
+  const [jobStatus, setJobStatus] = useState('pending');
   const [errorMsg, setErrorMsg] = useState('');
   const [isDragActive, setIsDragActive] = useState(false);
   const [activeTab, setActiveTab] = useState('health');
+  const [history, setHistory] = useState([]);
 
   const { toasts, addToast, removeToast } = useToast();
+
+  const loadHistory = useCallback(async () => {
+    try {
+      const data = await resumeService.getHistory();
+      setHistory(data);
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadHistory();
+  }, [loadHistory, status]);
+
+  const loadPastAnalysis = async (pastResumeId) => {
+    try {
+      setStatus(STATUS.PROCESSING);
+      setJobStatus('pending');
+      const analysisData = await resumeService.getAnalysis(pastResumeId);
+      setResumeId(pastResumeId);
+      setAnalysis(analysisData);
+      setStatus(STATUS.COMPLETED);
+      setJobStatus('done');
+      addToast('Historical analysis loaded!', 'success');
+    } catch (err) {
+      setStatus(STATUS.FAILED);
+      setErrorMsg('Failed to retrieve past analysis.');
+    }
+  };
 
   const handleReset = () => {
     setFile(null);
@@ -94,6 +127,7 @@ export default function CandidateOverview() {
     setResumeId(null);
     setAnalysis(null);
     setStatus(STATUS.EMPTY);
+    setJobStatus('pending');
     setErrorMsg('');
     setActiveTab('health');
   };
@@ -143,13 +177,17 @@ export default function CandidateOverview() {
       setResumeId(newResumeId);
 
       setStatus(STATUS.PROCESSING);
-      const analysisData = await resumeService.analyze(newResumeId, jobDescription);
+      setJobStatus('pending');
+      const analysisData = await resumeService.analyze(newResumeId, jobDescription, (statusData) => {
+        setJobStatus(statusData.status);
+      });
       setAnalysis(analysisData);
       setStatus(STATUS.COMPLETED);
       addToast('Intelligence analysis complete!', 'success');
     } catch (err) {
+      setJobStatus('failed');
       setStatus(STATUS.FAILED);
-      setErrorMsg(err.response?.data?.detail || 'The intelligence extraction encountered an error.');
+      setErrorMsg(err.response?.data?.detail || err.message || 'The intelligence extraction encountered an error.');
     }
   };
 
@@ -175,7 +213,7 @@ export default function CandidateOverview() {
 
   return (
     <MotionWrapper variant="page" className="p-4 md:p-8 lg:p-10 max-w-[1600px] mx-auto relative space-y-10">
-      <AIProcessing isProcessing={status === STATUS.PROCESSING} />
+      <AnalysisTimeline isProcessing={status === STATUS.PROCESSING} jobStatus={jobStatus} errorMsg={errorMsg} />
 
       {/* Hero */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -307,22 +345,56 @@ export default function CandidateOverview() {
                 )}
               </form>
             </GlassCard>
+            {status === STATUS.COMPLETED && (
+              <div className="mt-8">
+                <ImprovementRoadmap analysis={analysis} />
+              </div>
+            )}
           </div>
 
           {/* RIGHT — Results Panel */}
           <div className="lg:col-span-7">
             {status !== STATUS.COMPLETED ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 min-h-[400px]">
-                <GlassCard className="flex flex-col items-center justify-center p-12 text-center">
-                  <Search size={48} className="text-[var(--border)] mb-6" />
-                  <h4 className="text-xl font-bold text-white mb-2">Awaiting Analysis</h4>
-                  <p className="text-[var(--text-muted)] text-sm">Provide context to unlock career intelligence.</p>
-                </GlassCard>
-                <GlassCard className="flex flex-col items-center justify-center p-12 text-center">
-                  <Activity size={48} className="text-[var(--border)] mb-6" />
-                  <h4 className="text-xl font-bold text-white mb-2">Live Tracking</h4>
-                  <p className="text-[var(--text-muted)] text-sm">Metrics will compile in real-time.</p>
-                </GlassCard>
+              <div className="space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Activity Timeline */}
+                  <ActivityTimeline type="candidate" />
+
+                  {/* Recent Analysis History */}
+                  <div className="card-glass rounded-3xl p-6 border border-[var(--border)] relative overflow-hidden flex flex-col justify-between">
+                    <div>
+                      <h4 className="text-sm font-black text-white uppercase tracking-wider mb-6 flex items-center gap-2">
+                        <FileText size={18} className="text-[var(--primary)]" />
+                        Recent Analyses
+                      </h4>
+                      
+                      {history.length === 0 ? (
+                        <div className="text-center py-12 text-[var(--text-muted)] text-xs font-bold">
+                          No previous analysis sessions.
+                        </div>
+                      ) : (
+                        <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                          {history.map((h) => (
+                            <div key={h.id} className="p-3 rounded-xl bg-white/[0.01] border border-white/5 flex items-center justify-between gap-4">
+                              <div className="min-w-0">
+                                <p className="text-xs font-bold text-white truncate">{h.filename}</p>
+                                <p className="text-[10px] text-[var(--text-muted)] font-medium">
+                                  {new Date(h.created_at).toLocaleDateString()}
+                                </p>
+                              </div>
+                              <button
+                                onClick={() => loadPastAnalysis(h.id)}
+                                className="px-3 py-1.5 rounded-lg bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20 text-[var(--primary)] text-[10px] font-black uppercase transition-colors shrink-0"
+                              >
+                                Load ({h.ats_score}%)
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             ) : (
               <MotionWrapper variant="slideUp" delay={0.1} className="space-y-6">
