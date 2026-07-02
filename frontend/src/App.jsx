@@ -102,15 +102,22 @@ function AppRoutes() {
   );
 }
 
+import ErrorBoundary from './components/ErrorBoundary';
+import { NotificationProvider } from './context/NotificationContext';
+
 function App() {
   return (
-    <AppProvider>
-      <AuthProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </AuthProvider>
-    </AppProvider>
+    <ErrorBoundary>
+      <AppProvider>
+        <NotificationProvider>
+          <AuthProvider>
+            <BrowserRouter>
+              <AppRoutes />
+            </BrowserRouter>
+          </AuthProvider>
+        </NotificationProvider>
+      </AppProvider>
+    </ErrorBoundary>
   );
 }
 
