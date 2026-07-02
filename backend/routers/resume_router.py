@@ -78,3 +78,57 @@ async def download_report(
     
     logger.info(f"Report generated successfully for resume {resume_id}")
     return Response(content=pdf_bytes, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename=report_{resume_id}.pdf"})
+
+@router.get("/history")
+def get_resume_history(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    logger.info(f"Fetching history for user {current_user.email}")
+    resumes = db.query(models.Resume).filter(models.Resume.owner_id == current_user.id).order_by(models.Resume.created_at.desc()).all()
+    
+    history = []
+    for r in resumes:
+        analysis = db.query(models.Analysis).filter(models.Analysis.resume_id == r.id).order_by(models.Analysis.id.desc()).first()
+        history.append({
+            "id": r.id,
+            "filename": r.filename,
+            "created_at": r.created_at.isoformat(),
+            "analyzed": analysis is not None,
+            "ats_score": analysis.ats_score if analysis else None,
+            "analysis_id": analysis.id if analysis else None
+        })
+    return history
+
+@router.get("/{resume_id}/analysis", response_model=schemas.AnalysisResponse)
+def get_resume_analysis(
+    resume_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    logger.info(f"User {current_user.email} is fetching analysis for resume {resume_id}")
+    
+    resume = db.query(models.Resume).filter(models.Resume.id == resume_id).first()
+    if not resume:
+        raise HTTPException(status_code=404, detail="Resume not found")
+        
+    if resume.owner_id != current_user.id and not current_user.is_recruiter:
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
+    analysis = db.query(models.Analysis).filter(models.Analysis.resume_id == resume_id).order_by(models.Analysis.id.desc()).first()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Analysis not found")
+        
+    import json
+    return schemas.AnalysisResponse(
+        id=analysis.id,
+        resume_id=analysis.resume_id,
+        job_description_id=analysis.job_description_id,
+        ats_score=analysis.ats_score,
+        matched_keywords=json.loads(analysis.matched_keywords) if analysis.matched_keywords else [],
+        missing_keywords=json.loads(analysis.missing_keywords) if analysis.missing_keywords else [],
+        recommendations=analysis.recommendations,
+        recruiter_summary=analysis.recruiter_summary,
+        candidate_strengths=json.loads(analysis.candidate_strengths) if analysis.candidate_strengths else [],
+        created_at=analysis.created_at
+    )
