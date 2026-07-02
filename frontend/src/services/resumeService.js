@@ -11,7 +11,7 @@ export const resumeService = {
     return response.data;
   },
   
-  analyze: async (resumeId, jobDescription) => {
+  analyze: async (resumeId, jobDescription, onStatusChange) => {
     const formData = new FormData();
     formData.append('job_description', jobDescription);
     
@@ -21,6 +21,9 @@ export const resumeService = {
     });
     
     const jobId = startResponse.data.id;
+    if (onStatusChange) {
+      onStatusChange({ status: 'pending', jobId });
+    }
     
     // 2. Poll for Completion
     return new Promise((resolve, reject) => {
@@ -29,10 +32,14 @@ export const resumeService = {
           const statusResponse = await api.get(`/jobs/${jobId}`);
           const job = statusResponse.data;
           
+          if (onStatusChange) {
+            onStatusChange({ status: job.status, jobId });
+          }
+          
           if (job.status === 'done') {
             resolve(job.result);
           } else if (job.status === 'failed') {
-            reject(new Error(job.error || 'Analysis failed'));
+            reject(new Error(job.error_message || job.error || 'Analysis failed'));
           } else {
             // Wait 2 seconds and poll again
             setTimeout(poll, 2000);
@@ -55,6 +62,21 @@ export const resumeService = {
   
   getDashboardStats: async () => {
     const response = await api.get('/analytics/dashboard');
+    return response.data;
+  },
+  
+  getHistory: async () => {
+    const response = await api.get('/resumes/history');
+    return response.data;
+  },
+  
+  getRecruiterActivities: async () => {
+    const response = await api.get('/analytics/activities');
+    return response.data;
+  },
+  
+  getAnalysis: async (resumeId) => {
+    const response = await api.get(`/resumes/${resumeId}/analysis`);
     return response.data;
   }
 };
