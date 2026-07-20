@@ -1,4 +1,4 @@
-import { LayoutDashboard, FileText, Users, Settings, LogOut, ChevronLeft, ChevronRight, BrainCircuit, Shield } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Settings, LogOut, ChevronLeft, ChevronRight, BrainCircuit, Shield, User, GitCompare } from 'lucide-react';
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
@@ -11,10 +11,14 @@ export default function Sidebar() {
   const role = isRecruiter ? 'recruiter' : 'candidate';
 
   const menuItems = [
+    { id: 'candidate-dashboard', label: 'Intelligence Hub', icon: LayoutDashboard, path: '/candidate', roles: ['candidate'], end: true },
+    { id: 'candidate-compare', label: 'Resume Compare', icon: GitCompare, path: '/candidate/compare', roles: ['candidate'] },
+    { id: 'candidate-profile', label: 'My Profile', icon: User, path: '/candidate/profile', roles: ['candidate'] },
+    
     { id: 'dashboard', label: 'Overview', icon: LayoutDashboard, path: '/recruiter', roles: ['recruiter'], end: true },
-    { id: 'candidate-dashboard', label: 'Overview', icon: LayoutDashboard, path: '/candidate', roles: ['candidate'], end: true },
-    { id: 'resumes', label: 'Documents', icon: FileText, path: '/candidate/documents', roles: ['candidate'] },
     { id: 'candidates', label: 'Talent Pool', icon: Users, path: '/recruiter/talent-pool', roles: ['recruiter'] },
+    { id: 'recruiter-profile', label: 'Recruiter Profile', icon: User, path: '/recruiter/profile', roles: ['recruiter'] },
+    
     { id: 'settings', label: 'Preferences', icon: Settings, path: role === 'recruiter' ? '/recruiter/preferences' : '/candidate/preferences', roles: ['candidate', 'recruiter'] },
   ];
 
