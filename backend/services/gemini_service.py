@@ -75,8 +75,83 @@ class GeminiService:
         logger.info("✅ AI Response received successfully")
         return response.text.strip()
 
+    async def generate_resume_preview(self, resume_text: str, filename: str) -> dict:
+        """Generate a structured preview of the resume using Gemini"""
+        prompt = f"""
+        You are a world-class Recruitment AI and ATS Intelligence Engine.
+        Analyze the following resume and extract a comprehensive structured dashboard preview.
+        Do NOT compare it to a job description. Just analyze the resume on its own merits.
+
+        STRICT SCHEMA (JSON ONLY):
+        {{
+            "snapshot": {{"name": "Candidate Name", "estimated_experience": "X Years", "target_roles": ["Role 1"]}},
+            "health": {{"overall_score": 85, "ai_confidence": 90, "upload_quality": 95, "completeness": 80}},
+            "summary": "AI summary string",
+            "ats": {{"readability_score": 80, "formatting_score": 90, "buzzword_density": 40}},
+            "skills": {{
+                "matched": {{"languages": [], "frameworks": [], "tools": [], "soft_skills": [], "domain_keywords": []}},
+                "missing": {{"languages": [], "frameworks": [], "tools": [], "soft_skills": [], "domain_keywords": []}}
+            }},
+            "sections": ["Summary", "Experience"],
+            "roles": [{{"title": "Role Name", "confidence": 95}}],
+            "recommendations": [{{"priority": "high", "category": "formatting", "suggestion": "Fix margins"}}],
+            "risks": ["Too long"]
+        }}
+
+        Resume Filename: {filename}
+        Resume Content:
+        {resume_text}
+        """
+
+        try:
+            raw_response = self._call_ai(prompt)
+            clean_json = raw_response
+            if "```json" in raw_response:
+                clean_json = raw_response.split("```json")[1].split("```")[0].strip()
+            elif "```" in raw_response:
+                clean_json = raw_response.split("```")[1].split("```")[0].strip()
+
+            result = json.loads(clean_json)
+            
+            # Add static metadata and actions locally
+            from datetime import datetime
+            import uuid
+            
+            result["metadata"] = {
+                "filename": filename,
+                "file_type": "application/pdf",
+                "file_size_mb": 0.0,
+                "upload_timestamp": datetime.utcnow().isoformat() + "Z",
+                "version": "1.0.0"
+            }
+            
+            result["actions"] = [
+                {"id": str(uuid.uuid4()), "label": "Run Full Analysis", "action_type": "analyze"},
+                {"id": str(uuid.uuid4()), "label": "Compare to Job Description", "action_type": "compare"},
+                {"id": str(uuid.uuid4()), "label": "Generate Report", "action_type": "report"}
+            ]
+            
+            return result
+
+        except Exception as e:
+            logger.error(f"💥 AI Preview Failure: {str(e)}")
+            from datetime import datetime
+            import uuid
+            return {
+                "snapshot": {"name": "Candidate", "estimated_experience": "Unknown", "target_roles": ["Professional"]},
+                "metadata": {"filename": filename, "file_type": "application/pdf", "file_size_mb": 0.0, "upload_timestamp": datetime.utcnow().isoformat() + "Z", "version": "1.0.0"},
+                "health": {"overall_score": 50, "ai_confidence": 0, "upload_quality": 50, "completeness": 50},
+                "summary": "AI synchronization unavailable. Could not generate comprehensive summary.",
+                "ats": {"readability_score": 50, "formatting_score": 50, "buzzword_density": 0},
+                "skills": {"matched": {"languages": [], "frameworks": [], "tools": [], "soft_skills": [], "domain_keywords": []}, "missing": {"languages": [], "frameworks": [], "tools": [], "soft_skills": [], "domain_keywords": []}},
+                "sections": [],
+                "roles": [],
+                "recommendations": [{"priority": "high", "category": "System", "suggestion": "Try again later."}],
+                "actions": [{"id": str(uuid.uuid4()), "label": "Run Full Analysis", "action_type": "analyze"}],
+                "risks": ["AI analysis failed."]
+            }
+
     async def analyze_resume(self, resume_text: str, job_description: str) -> Dict:
-        """Main analysis entry point with error handling and fallback"""
         prompt = f"""
         You are a world-class Recruitment AI and ATS Intelligence Engine.
         Analyze the following resume against the job description.
