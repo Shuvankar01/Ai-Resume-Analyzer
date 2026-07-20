@@ -60,6 +60,11 @@ export const resumeService = {
     return response.data;
   },
   
+  getPreview: async (resumeId) => {
+    const response = await api.get(`/resumes/${resumeId}/preview`);
+    return response.data;
+  },
+  
   getDashboardStats: async () => {
     const response = await api.get('/analytics/dashboard');
     return response.data;

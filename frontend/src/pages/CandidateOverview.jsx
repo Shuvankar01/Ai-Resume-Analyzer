@@ -1,4 +1,4 @@
-import { useState, useCallback, memo } from 'react';
+import { useState, useCallback, memo, useEffect } from 'react';
 import {
   UploadCloud, File as FileIcon, Search, Plus, RefreshCw,
   Sparkles, Activity, FileText, GitCompare, Target, TrendingUp, Brain
@@ -19,6 +19,7 @@ import { resumeService } from '../services/resumeService';
 import Toast from '../components/ui/Toast';
 import useToast from '../hooks/useToast';
 import { motion, AnimatePresence } from 'framer-motion';
+import ResumePreviewDashboard from '../components/ui/preview/ResumePreviewDashboard';
 
 const MemoizedScoreCard = memo(ATSScoreCard);
 const MemoizedSkillRadar = memo(SkillRadar);
@@ -28,6 +29,7 @@ const STATUS = {
   EMPTY: 'EMPTY',
   SELECTED: 'SELECTED',
   UPLOADING: 'UPLOADING',
+  PREVIEW_ACTIVE: 'PREVIEW_ACTIVE',
   PROCESSING: 'PROCESSING',
   COMPLETED: 'COMPLETED',
   FAILED: 'FAILED',
@@ -83,6 +85,8 @@ export default function CandidateOverview() {
   const [jobDescription, setJobDescription] = useState('');
   const [resumeId, setResumeId] = useState(null);
   const [analysis, setAnalysis] = useState(null);
+  const [previewData, setPreviewData] = useState(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [status, setStatus] = useState(STATUS.EMPTY);
   const [jobStatus, setJobStatus] = useState('pending');
   const [errorMsg, setErrorMsg] = useState('');
@@ -126,6 +130,7 @@ export default function CandidateOverview() {
     setJobDescription('');
     setResumeId(null);
     setAnalysis(null);
+    setPreviewData(null);
     setStatus(STATUS.EMPTY);
     setJobStatus('pending');
     setErrorMsg('');
@@ -142,43 +147,57 @@ export default function CandidateOverview() {
     setIsDragActive(false);
   }, []);
 
+  const processUpload = async (uploadFile) => {
+    try {
+      setStatus(STATUS.UPLOADING);
+      setIsPreviewLoading(true);
+      const uploadData = await resumeService.upload(uploadFile);
+      const newResumeId = uploadData.id;
+      setResumeId(newResumeId);
+      
+      const preview = await resumeService.getPreview(newResumeId);
+      setPreviewData(preview);
+      setStatus(STATUS.PREVIEW_ACTIVE);
+    } catch (err) {
+      setStatus(STATUS.FAILED);
+      setErrorMsg(err.response?.data?.detail || err.message || 'Failed to upload or generate preview.');
+    } finally {
+      setIsPreviewLoading(false);
+    }
+  };
+
   const onDrop = useCallback((e) => {
     e.preventDefault();
     setIsDragActive(false);
-    if (status !== STATUS.EMPTY && status !== STATUS.SELECTED) return;
     if (e.dataTransfer.files?.length > 0) {
       const droppedFile = e.dataTransfer.files[0];
       if (droppedFile.type === 'application/pdf') {
         setFile(droppedFile);
-        setStatus(STATUS.SELECTED);
+        processUpload(droppedFile);
       } else {
         addToast('Only PDF files are supported', 'error');
       }
     }
-  }, [status, addToast]);
+  }, [addToast]);
 
   const handleFileChange = (e) => {
     if (e.target.files?.length > 0) {
-      setFile(e.target.files[0]);
-      setStatus(STATUS.SELECTED);
+      const selectedFile = e.target.files[0];
+      setFile(selectedFile);
+      processUpload(selectedFile);
     }
   };
 
   const handleWorkflow = async (e) => {
-    e.preventDefault();
-    if (!file || !jobDescription) {
+    e?.preventDefault();
+    if (!resumeId || !jobDescription) {
       addToast('Please provide both a resume and job description.', 'error');
       return;
     }
     try {
-      setStatus(STATUS.UPLOADING);
-      const uploadData = await resumeService.upload(file);
-      const newResumeId = uploadData.id;
-      setResumeId(newResumeId);
-
       setStatus(STATUS.PROCESSING);
       setJobStatus('pending');
-      const analysisData = await resumeService.analyze(newResumeId, jobDescription, (statusData) => {
+      const analysisData = await resumeService.analyze(resumeId, jobDescription, (statusData) => {
         setJobStatus(statusData.status);
       });
       setAnalysis(analysisData);
@@ -278,7 +297,7 @@ export default function CandidateOverview() {
                       onChange={handleFileChange}
                       className="hidden"
                       id="resume-upload"
-                      disabled={status !== STATUS.EMPTY && status !== STATUS.SELECTED}
+                      disabled={status !== STATUS.EMPTY && status !== STATUS.SELECTED && status !== STATUS.PREVIEW_ACTIVE}
                     />
                     {file ? (
                       <div className="flex items-center justify-between bg-white/5 p-4 rounded-2xl border border-white/10">
@@ -320,7 +339,7 @@ export default function CandidateOverview() {
                       placeholder="Paste the full job description here to enable the neural matching engine..."
                       value={jobDescription}
                       onChange={(e) => setJobDescription(e.target.value)}
-                      disabled={status !== STATUS.EMPTY && status !== STATUS.SELECTED}
+                      disabled={status !== STATUS.EMPTY && status !== STATUS.SELECTED && status !== STATUS.PREVIEW_ACTIVE}
                     />
                     <div className="absolute bottom-4 right-4 text-[10px] text-[var(--text-muted)] font-mono tracking-widest uppercase bg-[var(--surface-elevated)] px-2 py-1 rounded-md border border-[var(--border)]">
                       {jobDescription.length} char
@@ -328,17 +347,17 @@ export default function CandidateOverview() {
                   </div>
                 </div>
 
-                {status === STATUS.EMPTY || status === STATUS.SELECTED ? (
+                {status === STATUS.EMPTY || status === STATUS.SELECTED || status === STATUS.PREVIEW_ACTIVE ? (
                   <button
                     type="submit"
-                    disabled={!file || jobDescription.length < 50}
+                    disabled={!resumeId || jobDescription.length < 50}
                     className="w-full py-4 premium-gradient-bg border border-[var(--primary)]/30 text-white rounded-2xl transition-all disabled:opacity-20 font-bold text-base hover-lift shadow-[0_10px_30px_rgba(0,243,255,0.15)] flex items-center justify-center gap-2"
                   >
                     Run Intelligence Sync <Sparkles size={18} className="text-[var(--accent)]" />
                   </button>
                 ) : (
                   <div className="w-full py-4 bg-white/5 border border-white/10 text-gray-400 rounded-2xl font-bold text-base flex items-center justify-center gap-3 cursor-not-allowed">
-                    {status === STATUS.UPLOADING && 'Uploading Document...'}
+                    {status === STATUS.UPLOADING && 'Generating Preview...'}
                     {status === STATUS.PROCESSING && 'Processing Insights...'}
                     {status === STATUS.COMPLETED && 'Analysis Active'}
                   </div>
@@ -354,7 +373,30 @@ export default function CandidateOverview() {
 
           {/* RIGHT — Results Panel */}
           <div className="lg:col-span-7">
-            {status !== STATUS.COMPLETED ? (
+            {status === STATUS.UPLOADING || isPreviewLoading ? (
+              <div className="flex flex-col items-center justify-center h-[500px] space-y-6">
+                 <div className="relative">
+                   <div className="w-20 h-20 border-4 border-[var(--primary)]/20 border-t-[var(--primary)] rounded-full animate-spin" />
+                   <Sparkles className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[var(--primary)] animate-pulse" size={24} />
+                 </div>
+                 <p className="text-[var(--text-muted)] font-medium text-lg">Generating Resume Intelligence Preview...</p>
+              </div>
+            ) : status === STATUS.PREVIEW_ACTIVE && previewData ? (
+              <ResumePreviewDashboard 
+                previewData={previewData} 
+                onAction={(action) => {
+                  if (action === 'analyze') {
+                    if (jobDescription.length >= 50) {
+                      handleWorkflow();
+                    } else {
+                      addToast('Please provide a Job Description (at least 50 chars) first.', 'error');
+                    }
+                  } else {
+                    addToast(`Action '${action}' is not fully implemented yet.`, 'info');
+                  }
+                }} 
+              />
+            ) : status !== STATUS.COMPLETED ? (
               <div className="space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Activity Timeline */}
