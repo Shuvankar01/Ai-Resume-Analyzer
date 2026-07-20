@@ -40,3 +40,14 @@ def set_cached_analysis(resume_id: int, job_id: int, data: dict, exp=3600):
     exp,
     redis_dumps(data)
 )
+
+def get_cached_preview(resume_id: int):
+    key = f"preview:{resume_id}"
+    data = redis_client.get(key)
+    if data:
+        return redis_loads(data)
+    return None
+
+def set_cached_preview(resume_id: int, data: dict, exp=3600*24):
+    key = f"preview:{resume_id}"
+    redis_client.setex(key, exp, redis_dumps(data))
