@@ -4,7 +4,7 @@ from fastapi import HTTPException, UploadFile
 import models, schemas
 from utils.pdf_parser import extract_text_from_pdf
 from services.gemini_service import gemini_service
-from utils.cache import get_cached_analysis, set_cached_analysis
+from utils.cache import get_cached_analysis, set_cached_analysis, get_cached_preview, set_cached_preview
 from utils.serializer import redis_dumps, redis_loads
 
 logger = logging.getLogger(__name__)
@@ -97,3 +97,32 @@ async def analyze_candidate_resume(resume_id: int, job_description: str, db: Ses
     except Exception as e:
         logger.error(f"Analysis failed for resume ID {resume_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="AI Analysis failed")
+
+async def get_resume_preview(resume_id: int, db: Session, user_id: int):
+    logger.info(f"Initiating preview generation for resume ID: {resume_id}")
+    
+    resume = db.query(models.Resume).filter(
+        models.Resume.id == resume_id, 
+        models.Resume.owner_id == user_id
+    ).first()
+    
+    if not resume:
+        logger.warning(f"Resume ID {resume_id} not found for User {user_id}")
+        raise HTTPException(status_code=404, detail="Resume not found")
+        
+    cached = get_cached_preview(resume_id)
+    if cached:
+        logger.info(f"Returning cached preview for resume ID {resume_id}")
+        return cached
+
+    try:
+        preview_data = await gemini_service.generate_resume_preview(resume.extracted_text, resume.filename)
+        # Parse it into the schema to ensure type safety before caching
+        response_data = schemas.ResumePreviewResponse(**preview_data)
+        
+        set_cached_preview(resume_id, response_data.model_dump())
+        logger.info(f"Preview generated and cached for resume ID {resume_id}")
+        return response_data
+    except Exception as e:
+        logger.error(f"Preview generation failed for resume ID {resume_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="AI Preview failed")
