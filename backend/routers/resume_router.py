@@ -44,6 +44,15 @@ async def analyze_resume(
     
     return {"id": job_id, "status": "pending"}
 
+@router.get("/{resume_id}/preview", response_model=schemas.ResumePreviewResponse)
+async def get_resume_preview(
+    resume_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_active_user)
+):
+    logger.info(f"User {current_user.email} requested preview for resume {resume_id}")
+    return await resume_service.get_resume_preview(resume_id, db, current_user.id)
+
 @router.get("/{resume_id}/report")
 async def download_report(
     resume_id: int,

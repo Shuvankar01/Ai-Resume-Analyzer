@@ -77,3 +77,66 @@ class JobDescriptionResponse(JobDescriptionCreate):
 
     class Config:
         from_attributes = True
+
+# --- Preview Schemas ---
+class PreviewSnapshot(BaseModel):
+    name: Optional[str] = None
+    estimated_experience: Optional[str] = None
+    target_roles: List[str]
+
+class PreviewMetadata(BaseModel):
+    filename: str
+    file_type: str
+    file_size_mb: Optional[float] = None
+    upload_timestamp: str
+    version: str
+
+class PreviewHealth(BaseModel):
+    overall_score: int
+    ai_confidence: int
+    upload_quality: int
+    completeness: int
+
+class PreviewAtsMetrics(BaseModel):
+    readability_score: int
+    formatting_score: int
+    buzzword_density: int
+
+class CategorizedSkills(BaseModel):
+    languages: List[str]
+    frameworks: List[str]
+    tools: List[str]
+    soft_skills: List[str]
+    domain_keywords: List[str]
+    
+class PreviewSkills(BaseModel):
+    matched: CategorizedSkills
+    missing: CategorizedSkills
+
+class SuggestedRole(BaseModel):
+    title: str
+    confidence: int
+
+class PreviewRecommendation(BaseModel):
+    priority: str
+    category: str
+    suggestion: str
+
+class PreviewAction(BaseModel):
+    id: str
+    label: str
+    action_type: str
+
+class ResumePreviewResponse(BaseModel):
+    snapshot: PreviewSnapshot
+    metadata: PreviewMetadata
+    health: PreviewHealth
+    summary: str
+    ats: PreviewAtsMetrics
+    skills: PreviewSkills
+    sections: List[str]
+    roles: List[SuggestedRole]
+    recommendations: List[PreviewRecommendation]
+    actions: List[PreviewAction]
+    risks: List[str]
+
