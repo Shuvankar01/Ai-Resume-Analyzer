@@ -1,7 +1,7 @@
 import { useState, useCallback, memo, useEffect } from 'react';
 import {
   UploadCloud, File as FileIcon, Search, Plus, RefreshCw,
-  Sparkles, Activity, FileText, GitCompare, Target, TrendingUp, Brain
+  Sparkles, Activity, FileText, GitCompare, Target, TrendingUp, Brain, CheckCircle2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -300,30 +300,56 @@ export default function CandidateOverview() {
                       disabled={status !== STATUS.EMPTY && status !== STATUS.SELECTED && status !== STATUS.PREVIEW_ACTIVE}
                     />
                     {file ? (
-                      <div className="flex items-center justify-between bg-white/5 p-4 rounded-2xl border border-white/10">
-                        <div className="flex items-center gap-4 text-left">
-                          <div className="w-12 h-12 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-500 border border-rose-500/20">
-                            <FileIcon size={24} />
+                      <div className="flex flex-col gap-3">
+                        <div className="flex items-center justify-between bg-[var(--surface-elevated)] p-4 rounded-2xl border border-[var(--border)] relative overflow-hidden group">
+                          {status === STATUS.UPLOADING && <div className="absolute inset-0 bg-[var(--primary)]/5 animate-pulse" />}
+                          <div className="flex items-center gap-4 text-left relative z-10">
+                            <div className="w-12 h-12 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-500 border border-rose-500/20">
+                              <FileIcon size={24} />
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold text-white max-w-[200px] truncate">{file.name}</p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <p className="text-[10px] text-[var(--text-muted)] font-mono uppercase">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                                <span className="w-1 h-1 rounded-full bg-white/20"></span>
+                                <p className="text-[10px] text-[var(--text-muted)] font-mono uppercase">{new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                              </div>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-sm font-bold text-white max-w-[200px] truncate">{file.name}</p>
-                            <p className="text-[10px] text-[var(--text-muted)] font-mono uppercase">{(file.size / 1024 / 1024).toFixed(2)} MB • PDF</p>
+                          
+                          <div className="flex items-center gap-2 relative z-10">
+                            {(status === STATUS.PREVIEW_ACTIVE || status === STATUS.SELECTED || status === STATUS.FAILED) && (
+                              <>
+                                <label htmlFor="resume-upload" aria-label="Replace File" className="px-3 py-1.5 text-xs font-bold text-[var(--primary)] bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20 border border-[var(--primary)]/20 rounded-lg cursor-pointer transition-colors">
+                                  Replace
+                                </label>
+                                <button type="button" onClick={handleReset} aria-label="Remove File" className="px-3 py-1.5 text-xs font-bold text-red-400 bg-red-400/10 hover:bg-red-400/20 border border-red-400/20 rounded-lg cursor-pointer transition-colors">
+                                  Remove
+                                </button>
+                              </>
+                            )}
+                            {status === STATUS.UPLOADING && (
+                              <div className="px-3 py-1.5 text-xs font-bold text-blue-400 bg-blue-400/10 rounded-lg animate-pulse">Uploading...</div>
+                            )}
                           </div>
                         </div>
-                        {status === STATUS.SELECTED && (
-                          <label htmlFor="resume-upload" className="px-3 py-1.5 text-xs font-bold text-[var(--primary)] bg-[var(--primary)]/10 hover:bg-[var(--primary)]/20 rounded-lg cursor-pointer transition-colors">
-                            Change
-                          </label>
+                        {status === STATUS.PREVIEW_ACTIVE && (
+                          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-2 text-emerald-400 text-xs font-bold bg-emerald-400/10 px-3 py-2 rounded-xl border border-emerald-400/20 justify-center">
+                            <CheckCircle2 size={14} /> Upload & Extraction Complete
+                          </motion.div>
                         )}
                       </div>
                     ) : (
-                      <label htmlFor="resume-upload" className="cursor-pointer flex flex-col items-center gap-4 py-4">
-                        <div className={`w-16 h-16 rounded-full flex items-center justify-center border transition-all ${isDragActive ? 'bg-[var(--primary)]/20 border-[var(--primary)] text-[var(--primary)] shadow-[0_0_20px_rgba(59,130,246,0.3)]' : 'bg-white/5 border-[var(--border)] text-[var(--text-muted)] group-hover:text-white'}`}>
+                      <label htmlFor="resume-upload" className="cursor-pointer flex flex-col items-center gap-5 py-6">
+                        <div className={`w-20 h-20 rounded-full flex items-center justify-center border transition-all duration-300 ${isDragActive ? 'bg-[var(--primary)]/20 border-[var(--primary)] text-[var(--primary)] shadow-[0_0_30px_rgba(59,130,246,0.3)] scale-110' : 'bg-[var(--surface-elevated)] border-[var(--border)] text-[var(--text-muted)] group-hover:text-white group-hover:scale-105 group-hover:border-white/20'}`}>
                           <UploadCloud size={32} />
                         </div>
-                        <div className="space-y-1">
-                          <span className="block text-base font-bold text-gray-200 group-hover:text-white transition-colors">Drag & Drop PDF</span>
-                          <span className="text-xs text-[var(--text-muted)] font-medium">or click to browse local files</span>
+                        <div className="space-y-2">
+                          <span className="block text-lg font-bold text-white transition-colors">Upload your resume to begin AI analysis.</span>
+                          <span className="block text-sm text-[var(--text-muted)] font-medium">Drag & Drop or click to browse local PDF files</span>
+                        </div>
+                        <div className="px-5 py-2 mt-2 rounded-full bg-white/5 border border-white/10 text-xs font-bold text-gray-300 group-hover:bg-[var(--primary)]/10 group-hover:text-[var(--primary)] group-hover:border-[var(--primary)]/30 transition-all">
+                          Select File
                         </div>
                       </label>
                     )}
@@ -332,17 +358,35 @@ export default function CandidateOverview() {
 
                 {/* Job Description */}
                 <div className="space-y-3">
-                  <label className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">2. Target Job Description</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">2. Target Job Description</label>
+                    <AnimatePresence>
+                      {jobDescription.trim().length > 0 && jobDescription.trim().length < 50 && (
+                        <motion.span 
+                          initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
+                          className="text-xs font-bold text-red-400"
+                        >
+                          ⚠ Please enter at least 50 meaningful characters.
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </div>
                   <div className="relative group">
                     <textarea
-                      className="w-full h-48 p-5 rounded-[24px] bg-[var(--surface-elevated)] border border-[var(--border)] focus:border-[var(--primary)]/50 focus:bg-white/5 outline-none resize-none text-white text-sm transition-all placeholder:text-[var(--text-muted)] leading-relaxed custom-scrollbar"
+                      className={`w-full h-48 p-5 rounded-[24px] bg-[var(--surface-elevated)] border outline-none resize-none text-white text-sm transition-all placeholder:text-[var(--text-muted)] leading-relaxed custom-scrollbar
+                        ${jobDescription.trim().length > 0 && jobDescription.trim().length < 50 ? 'border-red-500/50 focus:border-red-500 focus:bg-red-500/5' : 'border-[var(--border)] focus:border-[var(--primary)]/50 focus:bg-white/5'}
+                      `}
                       placeholder="Paste the full job description here to enable the neural matching engine..."
                       value={jobDescription}
                       onChange={(e) => setJobDescription(e.target.value)}
                       disabled={status !== STATUS.EMPTY && status !== STATUS.SELECTED && status !== STATUS.PREVIEW_ACTIVE}
+                      aria-label="Target Job Description"
                     />
-                    <div className="absolute bottom-4 right-4 text-[10px] text-[var(--text-muted)] font-mono tracking-widest uppercase bg-[var(--surface-elevated)] px-2 py-1 rounded-md border border-[var(--border)]">
-                      {jobDescription.length} char
+                    <div className={`absolute bottom-4 right-4 flex items-center gap-2 text-[10px] font-mono tracking-widest uppercase bg-[var(--surface-elevated)] px-3 py-1.5 rounded-md border shadow-sm transition-colors
+                      ${jobDescription.trim().length >= 50 ? 'text-emerald-400 border-emerald-400/30' : 'text-[var(--text-muted)] border-[var(--border)]'}
+                    `}>
+                      {jobDescription.trim().length >= 50 && <CheckCircle2 size={12} className="text-emerald-400" />}
+                      <span>{jobDescription.trim().length} / 50 characters</span>
                     </div>
                   </div>
                 </div>
@@ -350,8 +394,9 @@ export default function CandidateOverview() {
                 {status === STATUS.EMPTY || status === STATUS.SELECTED || status === STATUS.PREVIEW_ACTIVE ? (
                   <button
                     type="submit"
-                    disabled={!resumeId || jobDescription.length < 50}
-                    className="w-full py-4 premium-gradient-bg border border-[var(--primary)]/30 text-white rounded-2xl transition-all disabled:opacity-20 font-bold text-base hover-lift shadow-[0_10px_30px_rgba(0,243,255,0.15)] flex items-center justify-center gap-2"
+                    disabled={!resumeId || jobDescription.trim().length < 50}
+                    className="w-full py-4 premium-gradient-bg border border-[var(--primary)]/30 text-white rounded-2xl transition-all disabled:opacity-20 disabled:grayscale font-bold text-base hover-lift shadow-[0_10px_30px_rgba(0,243,255,0.15)] flex items-center justify-center gap-2"
+                    aria-label="Run Intelligence Sync"
                   >
                     Run Intelligence Sync <Sparkles size={18} className="text-[var(--accent)]" />
                   </button>
@@ -374,12 +419,26 @@ export default function CandidateOverview() {
           {/* RIGHT — Results Panel */}
           <div className="lg:col-span-7">
             {status === STATUS.UPLOADING || isPreviewLoading ? (
-              <div className="flex flex-col items-center justify-center h-[500px] space-y-6">
-                 <div className="relative">
-                   <div className="w-20 h-20 border-4 border-[var(--primary)]/20 border-t-[var(--primary)] rounded-full animate-spin" />
-                   <Sparkles className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[var(--primary)] animate-pulse" size={24} />
-                 </div>
-                 <p className="text-[var(--text-muted)] font-medium text-lg">Generating Resume Intelligence Preview...</p>
+              <div className="space-y-6 animate-pulse opacity-70">
+                {/* Header Skeleton */}
+                <div className="card-glass rounded-2xl p-6 border-l-4 border-[var(--primary)]/30 flex gap-6 items-center">
+                   <div className="w-16 h-16 rounded-full bg-white/10" />
+                   <div className="flex-1 space-y-3">
+                     <div className="h-6 bg-white/20 rounded w-1/3" />
+                     <div className="h-4 bg-white/10 rounded w-1/4" />
+                   </div>
+                </div>
+                {/* Grid Skeletons */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2 space-y-6">
+                    <div className="card-glass rounded-2xl p-6 h-32 bg-white/5" />
+                    <div className="card-glass rounded-2xl p-6 h-64 bg-white/5" />
+                  </div>
+                  <div className="space-y-6">
+                    <div className="card-glass rounded-2xl p-6 h-40 bg-white/5" />
+                    <div className="card-glass rounded-2xl p-6 h-56 bg-white/5" />
+                  </div>
+                </div>
               </div>
             ) : status === STATUS.PREVIEW_ACTIVE && previewData ? (
               <ResumePreviewDashboard 

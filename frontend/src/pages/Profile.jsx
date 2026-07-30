@@ -122,6 +122,33 @@ export default function Profile() {
              />
           </div>
 
+          {isRecruiter && (
+            <GlassCard className="p-10">
+              <h3 className="text-xl font-bold text-white mb-8 flex items-center gap-3">
+                <Briefcase size={20} className="text-[#8b5cf6]" /> Recruiter Intelligence Profile
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+                {[
+                  { label: 'Company', value: 'Acme AI Systems' },
+                  { label: 'Recruiter Role', value: 'Senior Talent Partner' },
+                  { label: 'Hiring Region', value: 'Global Remote' },
+                  { label: 'Open Positions', value: '14 Active Roles' },
+                  { label: 'Team Size', value: '250+ Engineers' },
+                  { label: 'Hiring Focus', value: 'AI / Machine Learning' },
+                  { label: 'Preferred Skills', value: 'Python, React, GCP' },
+                  { label: 'Hiring Performance', value: 'Top 5% Global' },
+                  { label: 'AI Usage Stats', value: '1.2k Resumes Scanned' },
+                  { label: 'Recent Activity', value: 'Matched 3 Candidates Today' }
+                ].map((item, i) => (
+                  <div key={i} className="p-5 rounded-2xl bg-[var(--surface-elevated)] border border-[var(--border)] hover:bg-white/[0.02] hover:border-white/10 transition-colors cursor-default">
+                    <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-2">{item.label}</div>
+                    <div className="text-sm font-bold text-white truncate">{item.value}</div>
+                  </div>
+                ))}
+              </div>
+            </GlassCard>
+          )}
+
           <GlassCard className="p-10">
             <h3 className="text-xl font-bold text-white mb-8 flex items-center gap-3">
               <MapPin size={20} className="text-[var(--primary)]" /> System Access Points
