@@ -83,6 +83,16 @@ class PreviewSnapshot(BaseModel):
     name: Optional[str] = None
     estimated_experience: Optional[str] = None
     target_roles: List[str]
+    expected_salary: Optional[str] = None
+    career_stage: Optional[str] = None
+    market_value: Optional[str] = None
+    notice_period: Optional[str] = None
+    preferred_location: Optional[str] = None
+    employment_type: Optional[str] = None
+    availability: Optional[str] = None
+    role_match_confidence: Optional[int] = None
+    resume_strength: Optional[str] = None
+    interview_readiness: Optional[str] = None
 
 class PreviewMetadata(BaseModel):
     filename: str
@@ -93,25 +103,40 @@ class PreviewMetadata(BaseModel):
 
 class PreviewHealth(BaseModel):
     overall_score: int
+    overall_score_explanation: Optional[str] = None
     ai_confidence: int
+    ai_confidence_explanation: Optional[str] = None
     upload_quality: int
+    upload_quality_explanation: Optional[str] = None
     completeness: int
+    completeness_explanation: Optional[str] = None
 
 class PreviewAtsMetrics(BaseModel):
     readability_score: int
     formatting_score: int
     buzzword_density: int
+    explanation: Optional[str] = None
 
 class CategorizedSkills(BaseModel):
     languages: List[str]
     frameworks: List[str]
-    tools: List[str]
+    databases: List[str]
+    cloud: List[str]
+    devops: List[str]
     soft_skills: List[str]
-    domain_keywords: List[str]
+    ai_ml: List[str] = []
+    testing: List[str] = []
+    version_control: List[str] = []
+
+class MissingSkill(BaseModel):
+    name: str
+    category: str
+    priority: str
     
 class PreviewSkills(BaseModel):
     matched: CategorizedSkills
-    missing: CategorizedSkills
+    missing: List[MissingSkill]
+    recommended: List[str] = []
 
 class SuggestedRole(BaseModel):
     title: str
@@ -139,4 +164,9 @@ class ResumePreviewResponse(BaseModel):
     recommendations: List[PreviewRecommendation]
     actions: List[PreviewAction]
     risks: List[str]
+    strengths: List[str]
+    weaknesses: List[str]
+    interview_questions: List[str] = []
+    learning_roadmap: List[str] = []
+    career_growth_suggestions: List[str] = []
 

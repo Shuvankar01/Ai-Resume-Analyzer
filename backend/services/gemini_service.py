@@ -84,19 +84,39 @@ class GeminiService:
 
         STRICT SCHEMA (JSON ONLY):
         {{
-            "snapshot": {{"name": "Candidate Name", "estimated_experience": "X Years", "target_roles": ["Role 1"]}},
-            "health": {{"overall_score": 85, "ai_confidence": 90, "upload_quality": 95, "completeness": 80}},
+            "snapshot": {{"name": "Candidate Name", "estimated_experience": "X Years", "target_roles": ["Role 1"], "expected_salary": "$120k - $150k", "career_stage": "Senior", "market_value": "High", "notice_period": "2 Weeks", "preferred_location": "Remote / New York", "employment_type": "Full-time", "availability": "Immediate", "role_match_confidence": 85, "resume_strength": "Very Strong", "interview_readiness": "High"}},
+            "health": {{
+                "overall_score": 85, "overall_score_explanation": "Short punchy reason", 
+                "ai_confidence": 90, "ai_confidence_explanation": "Short punchy reason", 
+                "upload_quality": 95, "upload_quality_explanation": "Short punchy reason", 
+                "completeness": 80, "completeness_explanation": "Short punchy reason"
+            }},
             "summary": "AI summary string",
-            "ats": {{"readability_score": 80, "formatting_score": 90, "buzzword_density": 40}},
+            "ats": {{"readability_score": 80, "formatting_score": 90, "buzzword_density": 40, "explanation": "Short punchy reason"}},
             "skills": {{
-                "matched": {{"languages": [], "frameworks": [], "tools": [], "soft_skills": [], "domain_keywords": []}},
-                "missing": {{"languages": [], "frameworks": [], "tools": [], "soft_skills": [], "domain_keywords": []}}
+                "matched": {{"languages": ["Python", "JavaScript"], "frameworks": ["React", "FastAPI"], "databases": ["PostgreSQL"], "cloud": ["AWS"], "devops": ["Docker"], "soft_skills": ["Leadership"], "ai_ml": ["TensorFlow"], "testing": ["Jest"], "version_control": ["Git"]}},
+                "missing": [
+                    {{"name": "Kubernetes", "category": "devops", "priority": "high"}},
+                    {{"name": "TypeScript", "category": "languages", "priority": "medium"}}
+                ],
+                "recommended": ["GraphQL", "CI/CD"]
             }},
             "sections": ["Summary", "Experience"],
             "roles": [{{"title": "Role Name", "confidence": 95}}],
             "recommendations": [{{"priority": "high", "category": "formatting", "suggestion": "Fix margins"}}],
-            "risks": ["Too long"]
+            "risks": ["Too long"],
+            "strengths": ["Strong leadership", "Cloud native"],
+            "weaknesses": ["Lack of testing experience"],
+            "interview_questions": ["How do you scale PostgreSQL?", "Explain React hooks architecture."],
+            "learning_roadmap": ["Learn Kubernetes for modern deployment", "Study advanced TypeScript generics"],
+            "career_growth_suggestions": ["Transition towards Staff Engineer", "Take ownership of system design"]
         }}
+
+        IMPORTANT RULES:
+        1. For `skills.matched`, ONLY output real technical/professional skills (e.g. Python, React, PostgreSQL, Docker, AWS). 
+        2. NEVER use generic placebo terms like "startup", "working", "operating", "business", "company", "project" as technical skills.
+        3. For `skills.missing`, provide 3-5 critical skills commonly expected for their target roles that are NOT on the resume, prioritized strictly as "high", "medium", or "low".
+        4. Keep all explanations under 15 words.
 
         Resume Filename: {filename}
         Resume Content:
@@ -140,15 +160,25 @@ class GeminiService:
             return {
                 "snapshot": {"name": "Candidate", "estimated_experience": "Unknown", "target_roles": ["Professional"]},
                 "metadata": {"filename": filename, "file_type": "application/pdf", "file_size_mb": 0.0, "upload_timestamp": datetime.utcnow().isoformat() + "Z", "version": "1.0.0"},
-                "health": {"overall_score": 50, "ai_confidence": 0, "upload_quality": 50, "completeness": 50},
+                "health": {
+                    "overall_score": 50, "overall_score_explanation": "AI service unavailable",
+                    "ai_confidence": 0, "ai_confidence_explanation": "Could not parse document",
+                    "upload_quality": 50, "upload_quality_explanation": "Default fallback applied",
+                    "completeness": 50, "completeness_explanation": "Insufficient data"
+                },
                 "summary": "AI synchronization unavailable. Could not generate comprehensive summary.",
-                "ats": {"readability_score": 50, "formatting_score": 50, "buzzword_density": 0},
-                "skills": {"matched": {"languages": [], "frameworks": [], "tools": [], "soft_skills": [], "domain_keywords": []}, "missing": {"languages": [], "frameworks": [], "tools": [], "soft_skills": [], "domain_keywords": []}},
+                "ats": {"readability_score": 50, "formatting_score": 50, "buzzword_density": 0, "explanation": "Failed to parse ATS data"},
+                "skills": {
+                    "matched": {"languages": [], "frameworks": [], "databases": [], "cloud": [], "devops": [], "soft_skills": []}, 
+                    "missing": []
+                },
                 "sections": [],
                 "roles": [],
                 "recommendations": [{"priority": "high", "category": "System", "suggestion": "Try again later."}],
                 "actions": [{"id": str(uuid.uuid4()), "label": "Run Full Analysis", "action_type": "analyze"}],
-                "risks": ["AI analysis failed."]
+                "risks": ["AI analysis failed."],
+                "strengths": [],
+                "weaknesses": []
             }
 
     async def analyze_resume(self, resume_text: str, job_description: str) -> Dict:
