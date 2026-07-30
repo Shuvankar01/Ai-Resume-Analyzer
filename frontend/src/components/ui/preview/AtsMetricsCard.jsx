@@ -19,6 +19,13 @@ export default function AtsMetricsCard({ ats, risks }) {
       </h3>
       
       <div className="space-y-4 mb-6">
+        {ats.explanation && (
+          <div className="p-3 bg-[var(--primary)]/5 border border-[var(--primary)]/20 rounded-xl mb-4">
+            <p className="text-xs text-[var(--text)] font-medium leading-relaxed">
+              <span className="text-[var(--primary)] font-bold">AI Insight:</span> {ats.explanation}
+            </p>
+          </div>
+        )}
         {metrics.map((m, i) => (
           <div key={i} className="flex items-center justify-between">
             <span className="text-sm text-[var(--text-muted)] flex items-center gap-2">
