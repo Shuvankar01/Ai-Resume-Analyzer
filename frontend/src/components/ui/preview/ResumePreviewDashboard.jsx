@@ -43,7 +43,12 @@ export default function ResumePreviewDashboard({ previewData, onAction }) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <motion.div variants={itemVariants}>
-            <ExecutiveSummaryCard summary={previewData.summary} />
+            <ExecutiveSummaryCard 
+              summary={previewData.summary} 
+              interviewQuestions={previewData.interview_questions}
+              learningRoadmap={previewData.learning_roadmap}
+              careerGrowth={previewData.career_growth_suggestions}
+            />
           </motion.div>
           
           <motion.div variants={itemVariants}>
@@ -65,7 +70,12 @@ export default function ResumePreviewDashboard({ previewData, onAction }) {
           </motion.div>
           
           <motion.div variants={itemVariants}>
-            <StructureAndRecommendationsCard sections={previewData.sections} recommendations={previewData.recommendations} />
+            <StructureAndRecommendationsCard 
+              sections={previewData.sections} 
+              recommendations={previewData.recommendations}
+              strengths={previewData.strengths}
+              weaknesses={previewData.weaknesses}
+            />
           </motion.div>
         </div>
       </div>
