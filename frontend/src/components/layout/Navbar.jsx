@@ -2,9 +2,9 @@ import { Bell, Search, BrainCircuit, ChevronDown, User, LogOut, LayoutDashboard,
 import { useAuth } from '../../hooks/useAuth';
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
 
 import NotificationCenter from '../ui/NotificationCenter';
+import { AnimatePresence, motion } from 'framer-motion';
 
 export default function Navbar() {
   const { user, isRecruiter, logout } = useAuth();
@@ -34,15 +34,15 @@ export default function Navbar() {
   const basePath = isRecruiter ? '/recruiter' : '/candidate';
 
   return (
-    <nav className="h-20 border-b border-[var(--border)] bg-[var(--background)]/80 backdrop-blur-xl sticky top-0 z-50 flex items-center justify-between px-6 lg:px-10">
+    <nav className="h-20 border-b border-(--border) bg-(--background)/80 backdrop-blur-xl sticky top-0 z-50 flex items-center justify-between px-6 lg:px-10">
       
       {/* Left side */}
       <div className="flex items-center gap-10">
         <Link to={basePath} className="flex items-center gap-3 group">
-          <div className="w-10 h-10 rounded-xl bg-[var(--primary)]/10 flex items-center justify-center border border-[var(--primary)]/20 shadow-[0_0_15px_rgba(59,130,246,0.3)] group-hover:scale-105 transition-transform">
-            <BrainCircuit size={24} className="text-[var(--primary)] group-hover:text-white transition-colors" />
+          <div className="w-10 h-10 rounded-xl bg-(--primary)/10 flex items-center justify-center border border-(--primary)/20 shadow-[0_0_15px_rgba(59,130,246,0.3)] group-hover:scale-105 transition-transform">
+            <BrainCircuit size={24} className="text-(--primary) group-hover:text-white transition-colors" />
           </div>
-          <span className="text-xl font-black text-white tracking-tighter">Resume<span className="text-[var(--accent)]">AI</span></span>
+          <span className="text-xl font-black text-white tracking-tighter">Resume<span className="text-(--accent)">AI</span></span>
         </Link>
         
         {/* Quick Links (Hidden on small screens) */}
@@ -66,13 +66,13 @@ export default function Navbar() {
       {/* Right side */}
       <div className="flex items-center gap-6">
         <div className="hidden lg:flex items-center relative group">
-          <Search size={18} className="absolute left-4 text-gray-500 group-focus-within:text-[var(--primary)] transition-colors" />
+          <Search size={18} className="absolute left-4 text-gray-500 group-focus-within:text-(--primary) transition-colors" />
           <input 
             type="text" 
             placeholder="Search intelligence database..." 
-            className="w-64 pl-11 pr-4 py-2.5 rounded-full bg-[var(--surface-elevated)] border border-[var(--border)] focus:border-[var(--primary)]/50 focus:w-80 outline-none transition-all text-sm text-white placeholder:text-gray-600"
+            className="w-64 pl-11 pr-4 py-2.5 rounded-full bg-(--surface-elevated) border border-(--border) focus:border-(--primary)/50 focus:w-80 outline-none transition-all text-sm text-white placeholder:text-gray-600"
           />
-          <div className="absolute right-4 px-2 py-0.5 rounded border border-[var(--border)] bg-[var(--background)] text-[10px] font-mono text-gray-500 hidden xl:block">
+          <div className="absolute right-4 px-2 py-0.5 rounded border border-(--border) bg-(--background) text-[10px] font-mono text-gray-500 hidden xl:block">
             ⌘K
           </div>
         </div>
@@ -82,22 +82,22 @@ export default function Navbar() {
         <div className="relative" ref={menuRef}>
           <button 
             onClick={() => setShowProfileMenu(!showProfileMenu)}
-            className="flex items-center gap-3 p-1.5 pr-3 rounded-full hover:bg-[var(--surface-elevated)] border border-transparent hover:border-[var(--border)] transition-all"
+            className="flex items-center gap-3 p-1.5 pr-3 rounded-full hover:bg-(--surface-elevated) border border-transparent hover:border-(--border) transition-all"
           >
             <div className="relative">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[var(--primary)] to-purple-600 flex items-center justify-center text-white font-black text-sm shadow-[0_0_10px_rgba(59,130,246,0.3)]">
+              <div className="w-9 h-9 rounded-full bg-linear-to-br from-(--primary) to-purple-600 flex items-center justify-center text-white font-black text-sm shadow-[0_0_10px_rgba(59,130,246,0.3)]">
                 {user?.avatar ? (
                   <img src={user.avatar} alt={user.full_name} className="w-full h-full rounded-full object-cover" />
                 ) : (
                   getInitials(user?.full_name)
                 )}
               </div>
-              <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-[var(--background)]"></div>
+              <div className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-(--background)"></div>
             </div>
             
             <div className="hidden sm:block text-left">
-              <p className="text-sm font-bold text-white max-w-[100px] truncate">{user?.full_name || 'User'}</p>
-              <p className="text-[10px] font-mono text-[var(--accent)] uppercase tracking-widest">{isRecruiter ? 'Recruiter' : 'Candidate'}</p>
+              <p className="text-sm font-bold text-white max-w-25 truncate">{user?.full_name || 'User'}</p>
+              <p className="text-[10px] font-mono text-(--accent) uppercase tracking-widest">{isRecruiter ? 'Recruiter' : 'Candidate'}</p>
             </div>
             <ChevronDown size={14} className="text-gray-500 ml-1" />
           </button>
@@ -109,9 +109,9 @@ export default function Navbar() {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 10, scale: 0.95 }}
                 transition={{ duration: 0.2 }}
-                className="absolute right-0 mt-3 w-56 rounded-2xl bg-[var(--surface-elevated)] border border-[var(--border)] shadow-2xl overflow-hidden backdrop-blur-xl z-[100]"
+                className="absolute right-0 mt-3 w-56 rounded-2xl bg-(--surface-elevated) border border-(--border) shadow-2xl overflow-hidden backdrop-blur-xl z-[100]"
               >
-                <div className="p-4 border-b border-[var(--border)] bg-white/5">
+                <div className="p-4 border-b border-(--border) bg-white/5">
                   <p className="text-sm font-bold text-white truncate">{user?.full_name}</p>
                   <p className="text-xs text-gray-400 truncate">{user?.email}</p>
                 </div>
