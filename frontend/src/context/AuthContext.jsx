@@ -1,22 +1,34 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useState, useEffect, useCallback } from 'react';
+import axios from 'axios';
 import { authService } from '../services/authService';
 import api from '../services/api';
 import logger from '../utils/logger';
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext();
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchProfile = useCallback(async () => {
+  const fetchProfile = useCallback(async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       const response = await api.get('/auth/me');
       setUser(response.data);
       setError(null);
     } catch (err) {
+      // A canceled request is not an authentication failure. Concurrent profile checks
+      // (React StrictMode double-invokes this effect on mount) can be deduplicated by
+      // the API layer, and that cancellation must not sign an already-authenticated
+      // user out.
+      if (axios.isCancel(err)) {
+        logger.info('Profile request canceled, keeping existing session');
+        return;
+      }
       logger.error('Failed to fetch user profile', err);
       // Clear user state if check fails (e.g. unauthenticated or expired cookie)
       setUser(null);
@@ -26,7 +38,8 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    fetchProfile();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchProfile(false); // Intentional: Fetch auth state on mount
   }, [fetchProfile]);
 
   const login = async (email, password) => {

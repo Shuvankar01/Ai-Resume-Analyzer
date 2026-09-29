@@ -1,8 +1,11 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import logger from '../utils/logger';
 
-const AppContext = createContext();
+// eslint-disable-next-line react-refresh/only-export-components
+export const AppContext = createContext();
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function AppProvider({ children }) {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [globalLoading, setGlobalLoading] = useState(false);

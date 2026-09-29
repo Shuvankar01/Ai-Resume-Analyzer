@@ -1,9 +1,12 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle, AlertCircle, AlertTriangle, Info, X } from 'lucide-react';
 
-const NotificationContext = createContext();
+// eslint-disable-next-line react-refresh/only-export-components
+export const NotificationContext = createContext();
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function NotificationProvider({ children }) {
   const [notifications, setNotifications] = useState([]);
   const [toasts, setToasts] = useState([]);
@@ -52,14 +55,14 @@ export function NotificationProvider({ children }) {
     success: <CheckCircle className="text-emerald-400" size={18} />,
     error: <AlertCircle className="text-rose-400" size={18} />,
     warning: <AlertTriangle className="text-amber-400" size={18} />,
-    info: <Info className="text-[var(--accent)]" size={18} />
+    info: <Info className="text-(--accent)" size={18} />
   };
 
   const backgrounds = {
     success: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300',
     error: 'bg-rose-500/10 border-rose-500/20 text-rose-300',
     warning: 'bg-amber-500/10 border-amber-500/20 text-amber-300',
-    info: 'bg-[var(--accent)]/10 border-[var(--accent)]/20 text-[var(--accent)]'
+    info: 'bg-(--accent)/10 border-(--accent)/20 text-(--accent)'
   };
 
   return (
@@ -92,7 +95,7 @@ export function NotificationProvider({ children }) {
               </div>
               <button
                 onClick={() => dismissToast(toast.id)}
-                className="text-[var(--text-muted)] hover:text-white transition-colors"
+                className="text-(--text-muted) hover:text-white transition-colors"
               >
                 <X size={16} />
               </button>
