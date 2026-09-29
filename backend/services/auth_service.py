@@ -1,5 +1,6 @@
 import logging
 from datetime import timedelta
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
@@ -34,7 +35,13 @@ def register_new_user(user_data: schemas.UserCreate, db: Session):
 def authenticate_user_and_create_token(form_data: OAuth2PasswordRequestForm, db: Session):
     logger.info(f"Login attempt for user: {form_data.username}")
     
-    user = db.query(models.User).filter(models.User.email == form_data.username).first()
+    # Emails are stored normalized by pydantic's EmailStr on registration, which
+    # lowercases the domain but preserves the local part (e.g. "Shuvankar@gmail.com").
+    # The submitted identifier arrives as a raw string, so it has to be matched the same
+    # way or a correctly-typed but differently-cased / whitespace-padded address is
+    # reported as "Incorrect email or password". Password verification is unchanged.
+    submitted_email = (form_data.username or "").strip().lower()
+    user = db.query(models.User).filter(func.lower(models.User.email) == submitted_email).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
         logger.warning(f"Login failed for user: {form_data.username}")
         raise HTTPException(
