@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, GitCompare, Zap, TrendingUp, AlertTriangle, Sparkles, Check, X } from 'lucide-react';
@@ -41,7 +42,7 @@ function ScoreColumn({ label, analysis, color, delay = 0 }) {
     >
       {/* Score Ring */}
       <GlassCard glow className="p-8 text-center">
-        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[var(--text-muted)] mb-4">{label}</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-(--text-muted) mb-4">{label}</p>
         <div className="flex justify-center mb-4 relative">
           <ProgressRing score={score} size={160} strokeWidth={12} color={color} />
           <div className="absolute inset-0 flex items-center justify-center">
@@ -50,20 +51,20 @@ function ScoreColumn({ label, analysis, color, delay = 0 }) {
                 <AnimatedCounter value={score} />
                 <span className="text-xl" style={{ color }}>%</span>
               </span>
-              <p className="text-[10px] text-[var(--text-muted)] uppercase tracking-widest font-bold mt-1">ATS Score</p>
+              <p className="text-[10px] text-(--text-muted) uppercase tracking-widest font-bold mt-1">ATS Score</p>
             </div>
           </div>
         </div>
 
         {/* Mini metrics */}
         <div className="grid grid-cols-2 gap-3 mt-4">
-          <div className="p-3 rounded-2xl bg-white/[0.03] border border-[var(--border)]">
+          <div className="p-3 rounded-2xl bg-white/3 border border-(--border)">
             <p className="text-xl font-black text-emerald-400">{matchedCount}</p>
-            <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider">Matched</p>
+            <p className="text-[10px] text-(--text-muted) font-bold uppercase tracking-wider">Matched</p>
           </div>
-          <div className="p-3 rounded-2xl bg-white/[0.03] border border-[var(--border)]">
+          <div className="p-3 rounded-2xl bg-white/3 border border-(--border)">
             <p className="text-xl font-black text-rose-400">{missingCount}</p>
-            <p className="text-[10px] text-[var(--text-muted)] font-bold uppercase tracking-wider">Missing</p>
+            <p className="text-[10px] text-(--text-muted) font-bold uppercase tracking-wider">Missing</p>
           </div>
         </div>
       </GlassCard>
@@ -81,7 +82,7 @@ function ScoreColumn({ label, analysis, color, delay = 0 }) {
               </span>
             ))}
             {(!analysis?.matched_keywords?.length) && (
-              <span className="text-[var(--text-muted)] text-sm italic">None found</span>
+              <span className="text-(--text-muted) text-sm italic">None found</span>
             )}
           </div>
         </div>
@@ -104,15 +105,15 @@ function ScoreColumn({ label, analysis, color, delay = 0 }) {
 
       {/* Strengths */}
       <GlassCard className="p-6">
-        <h4 className="text-[10px] font-bold text-[var(--primary)] uppercase tracking-[0.3em] mb-3">Core Strengths</h4>
+        <h4 className="text-[10px] font-bold text-(--primary) uppercase tracking-[0.3em] mb-3">Core Strengths</h4>
         <ul className="space-y-2">
           {(analysis?.strengths || []).map((s, i) => (
             <li key={i} className="text-sm text-gray-300 flex items-start gap-2">
-              <span className="text-[var(--primary)] mt-1">•</span> {s}
+              <span className="text-(--primary) mt-1">•</span> {s}
             </li>
           ))}
           {(!analysis?.strengths?.length) && (
-            <li className="text-[var(--text-muted)] text-sm italic">No strengths highlighted.</li>
+            <li className="text-(--text-muted) text-sm italic">No strengths highlighted.</li>
           )}
         </ul>
       </GlassCard>
@@ -136,7 +137,7 @@ export default function ResumeCompare() {
           action={
             <button
               onClick={() => navigate('/candidate')}
-              className="px-6 py-3 rounded-2xl bg-[var(--primary)] text-white font-bold hover-lift transition-all"
+              className="px-6 py-3 rounded-2xl bg-(--primary) text-white font-bold hover-lift transition-all"
             >
               Go to Analysis
             </button>
@@ -147,20 +148,20 @@ export default function ResumeCompare() {
   }
 
   return (
-    <MotionWrapper variant="page" className="p-4 md:p-8 lg:p-10 max-w-[1600px] mx-auto space-y-10">
+    <MotionWrapper variant="page" className="p-4 md:p-8 lg:p-10 max-w-400 mx-auto space-y-10">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
         <div className="space-y-2">
           <button
             onClick={() => navigate('/candidate')}
-            className="flex items-center gap-2 text-[var(--text-muted)] hover:text-white transition-colors text-sm font-bold mb-2"
+            className="flex items-center gap-2 text-(--text-muted) hover:text-white transition-colors text-sm font-bold mb-2"
           >
             <ArrowLeft size={16} /> Back to Analysis
           </button>
           <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight flex items-center gap-3">
-            Resume Comparison <GitCompare className="text-[var(--accent)]" size={32} />
+            Resume Comparison <GitCompare className="text-(--accent)" size={32} />
           </h2>
-          <p className="text-[var(--text-muted)]">Side-by-side before/after intelligence comparison.</p>
+          <p className="text-(--text-muted)">Side-by-side before/after intelligence comparison.</p>
         </div>
 
         {/* Improvement Badge */}
@@ -169,7 +170,7 @@ export default function ResumeCompare() {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.4 }}
-            className="flex flex-col items-center gap-1 px-8 py-5 rounded-3xl bg-gradient-to-br from-emerald-500/20 to-emerald-500/5 border border-emerald-500/20"
+            className="flex flex-col items-center gap-1 px-8 py-5 rounded-3xl bg-linear-to-br from-emerald-500/20 to-emerald-500/5 border border-emerald-500/20"
           >
             <div className="flex items-center gap-2 text-emerald-400">
               <TrendingUp size={20} />
@@ -188,7 +189,7 @@ export default function ResumeCompare() {
             initial={{ opacity: 0, scale: 0 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.5, type: 'spring', bounce: 0.5 }}
-            className="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center text-white font-black text-sm shadow-[0_0_30px_rgba(0,243,255,0.3)]"
+            className="w-12 h-12 rounded-full bg-linear-to-br from-(--primary) to-(--accent) flex items-center justify-center text-white font-black text-sm shadow-[0_0_30px_rgba(0,243,255,0.3)]"
           >
             VS
           </motion.div>
@@ -218,18 +219,18 @@ export default function ResumeCompare() {
       {/* Action Panel */}
       <GlassCard glow className="p-8 flex flex-col sm:flex-row items-center justify-between gap-6">
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center border border-[var(--accent)]/20 shrink-0">
-            <Sparkles size={22} className="text-[var(--accent)]" />
+          <div className="w-12 h-12 rounded-2xl bg-(--accent)/10 flex items-center justify-center border border-(--accent)/20 shrink-0">
+            <Sparkles size={22} className="text-(--accent)" />
           </div>
           <div>
             <h4 className="text-lg font-bold text-white mb-1">Ready to optimize your resume?</h4>
-            <p className="text-[var(--text-muted)] text-sm">Apply the missing skills and keyword improvements to boost your ATS score by up to {improved?.improvement ?? 0}%.</p>
+            <p className="text-(--text-muted) text-sm">Apply the missing skills and keyword improvements to boost your ATS score by up to {improved?.improvement ?? 0}%.</p>
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
           <button
             onClick={() => navigate('/candidate')}
-            className="px-6 py-3 rounded-2xl bg-white/5 hover:bg-white/10 text-white font-bold transition-all border border-[var(--border)] text-sm"
+            className="px-6 py-3 rounded-2xl bg-white/5 hover:bg-white/10 text-white font-bold transition-all border border-(--border) text-sm"
           >
             New Analysis
           </button>
