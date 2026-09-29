@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import PreviewHeader from './PreviewHeader';
 import HealthMetricsCard from './HealthMetricsCard';
 import ExecutiveSummaryCard from './ExecutiveSummaryCard';
@@ -7,6 +6,7 @@ import AtsMetricsCard from './AtsMetricsCard';
 import SuggestedRolesCard from './SuggestedRolesCard';
 import CategorizedSkillsCard from './CategorizedSkillsCard';
 import StructureAndRecommendationsCard from './StructureAndRecommendationsCard';
+import { motion } from 'framer-motion';
 
 const containerVariants = {
   hidden: { opacity: 0 },

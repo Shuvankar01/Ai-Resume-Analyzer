@@ -17,7 +17,7 @@ export default function HealthMetricsCard({ health }) {
   return (
     <GlassCard className="p-6">
       <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
-        <Activity className="text-[var(--primary)]" size={20} />
+        <Activity className="text-(--primary)" size={20} />
         Resume Health Score
       </h3>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
@@ -36,7 +36,7 @@ export default function HealthMetricsCard({ health }) {
               </span>
               <span className="text-xs text-white font-medium mt-1.5 block">{m.label}</span>
               {m.explanation && (
-                <p className="text-[10px] text-[var(--text-muted)] mt-2 leading-relaxed text-center max-w-[130px] opacity-70 group-hover:opacity-100 transition-opacity">
+                <p className="text-[10px] text-(--text-muted) mt-2 leading-relaxed text-center max-w-32.5 opacity-70 group-hover:opacity-100 transition-opacity">
                   {m.explanation}
                 </p>
               )}

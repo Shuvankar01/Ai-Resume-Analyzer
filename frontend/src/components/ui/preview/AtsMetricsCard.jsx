@@ -14,26 +14,26 @@ export default function AtsMetricsCard({ ats, risks }) {
   return (
     <GlassCard className="p-6">
       <h3 className="text-lg font-semibold text-white mb-5 flex items-center gap-2">
-        <AlertTriangle className="text-[var(--primary)]" size={20} />
+        <AlertTriangle className="text-(--primary)" size={20} />
         ATS Metrics & Risks
       </h3>
       
       <div className="space-y-4 mb-6">
         {ats.explanation && (
-          <div className="p-3 bg-[var(--primary)]/5 border border-[var(--primary)]/20 rounded-xl mb-4">
-            <p className="text-xs text-[var(--text)] font-medium leading-relaxed">
-              <span className="text-[var(--primary)] font-bold">AI Insight:</span> {ats.explanation}
+          <div className="p-3 bg-(--primary)/5 border border-(--primary)/20 rounded-xl mb-4">
+            <p className="text-xs text-(--text) font-medium leading-relaxed">
+              <span className="text-(--primary) font-bold">AI Insight:</span> {ats.explanation}
             </p>
           </div>
         )}
         {metrics.map((m, i) => (
           <div key={i} className="flex items-center justify-between">
-            <span className="text-sm text-[var(--text-muted)] flex items-center gap-2">
+            <span className="text-sm text-(--text-muted) flex items-center gap-2">
               <m.icon size={16} /> {m.label}
             </span>
-            <div className="w-1/2 bg-[var(--surface-elevated)] h-2 rounded-full overflow-hidden border border-[var(--border)]">
+            <div className="w-1/2 bg-(--surface-elevated) h-2 rounded-full overflow-hidden border border-(--border)">
               <div 
-                className="h-full bg-[var(--primary)]" 
+                className="h-full bg-(--primary)" 
                 style={{ width: `${m.value}%` }} 
               />
             </div>
@@ -49,7 +49,7 @@ export default function AtsMetricsCard({ ats, risks }) {
           </h4>
           <ul className="space-y-2">
             {risks.map((risk, i) => (
-              <li key={i} className="text-xs text-[var(--text-muted)] flex items-start gap-2">
+              <li key={i} className="text-xs text-(--text-muted) flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-red-400 mt-1 flex-shrink-0" />
                 {risk}
               </li>

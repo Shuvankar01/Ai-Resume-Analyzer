@@ -26,7 +26,7 @@ export default function CategorizedSkillsCard({ skills }) {
     <div className="space-y-6">
       <GlassCard className="p-6">
         <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
-          <Code className="text-[var(--primary)]" size={20} />
+          <Code className="text-(--primary)" size={20} />
           Matched Intelligence
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -34,14 +34,14 @@ export default function CategorizedSkillsCard({ skills }) {
             const matched = skills.matched[cat.key] || [];
             if (matched.length === 0) return null;
             return (
-              <div key={cat.key} className="p-4 rounded-xl bg-[var(--background)]/30 border border-[var(--border)]">
-                <div className="flex items-center gap-2 mb-3 pb-2 border-b border-[var(--border)]">
-                  <cat.icon size={16} className="text-[var(--text-muted)]" />
-                  <h4 className="text-sm font-medium text-[var(--text)]">{cat.label}</h4>
+              <div key={cat.key} className="p-4 rounded-xl bg-(--background)/30 border border-(--border)">
+                <div className="flex items-center gap-2 mb-3 pb-2 border-b border-(--border)">
+                  <cat.icon size={16} className="text-(--text-muted)" />
+                  <h4 className="text-sm font-medium text-(--text)">{cat.label}</h4>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {matched.map((s, i) => (
-                    <span key={`m-${i}`} className="px-2.5 py-1 rounded-md bg-[var(--primary)]/10 text-[var(--primary)] text-xs font-medium border border-[var(--primary)]/20 shadow-sm">
+                    <span key={`m-${i}`} className="px-2.5 py-1 rounded-md bg-(--primary)/10 text-(--primary) text-xs font-medium border border-(--primary)/20 shadow-sm">
                       {s}
                     </span>
                   ))}
@@ -84,11 +84,11 @@ export default function CategorizedSkillsCard({ skills }) {
               </div>
             )}
             {lowPriority.length > 0 && (
-              <div className="p-4 rounded-xl bg-[var(--surface-elevated)] border border-[var(--border)]">
-                <h4 className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest mb-3">Low Priority</h4>
+              <div className="p-4 rounded-xl bg-(--surface-elevated) border border-(--border)">
+                <h4 className="text-xs font-bold text-(--text-muted) uppercase tracking-widest mb-3">Low Priority</h4>
                 <div className="flex flex-wrap gap-2">
                   {lowPriority.map((s, i) => (
-                    <span key={i} className="px-2.5 py-1 rounded-md bg-white/5 text-[var(--text-muted)] text-xs border border-white/10">
+                    <span key={i} className="px-2.5 py-1 rounded-md bg-white/5 text-(--text-muted) text-xs border border-white/10">
                       {s.name}
                     </span>
                   ))}
@@ -98,7 +98,7 @@ export default function CategorizedSkillsCard({ skills }) {
           </div>
           
           {skills.recommended && skills.recommended.length > 0 && (
-            <div className="mt-6 pt-6 border-t border-[var(--border)]">
+            <div className="mt-6 pt-6 border-t border-(--border)">
               <h4 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
                 <Lightbulb className="text-yellow-400" size={16} /> Recommended Focus
               </h4>
