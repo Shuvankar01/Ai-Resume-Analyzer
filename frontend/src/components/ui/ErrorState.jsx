@@ -1,6 +1,6 @@
-import { motion } from 'framer-motion';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import GlassCard from './GlassCard';
+import { motion } from 'framer-motion';
 
 export default function ErrorState({ 
   title = "System Error", 
@@ -17,7 +17,7 @@ export default function ErrorState({
         <AlertTriangle size={28} className="text-rose-500" />
       </motion.div>
       <h3 className="text-xl font-bold text-white mb-2 tracking-tight">{title}</h3>
-      <p className="text-[var(--text-muted)] text-sm max-w-sm mb-8 leading-relaxed">
+      <p className="text-(--text-muted) text-sm max-w-sm mb-8 leading-relaxed">
         {message}
       </p>
       {onRetry && (

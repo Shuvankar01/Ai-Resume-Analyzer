@@ -3,16 +3,17 @@ import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   ResponsiveContainer, Legend, Tooltip
 } from 'recharts';
-import { motion } from 'framer-motion';
+
 import { Zap, AlertTriangle, TrendingUp } from 'lucide-react';
 import GlassCard from './GlassCard';
 import EmptyState from './EmptyState';
+import { motion } from 'framer-motion';
 
 // Custom tooltip for the radar chart
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-[#0a0a0f]/95 border border-[var(--border)] rounded-2xl px-4 py-3 shadow-2xl text-sm">
+      <div className="bg-[#0a0a0f]/95 border border-(--border) rounded-2xl px-4 py-3 shadow-2xl text-sm">
         <p className="text-white font-bold mb-1">{label}</p>
         {payload.map((p) => (
           <p key={p.name} style={{ color: p.color }} className="font-semibold">
@@ -53,26 +54,26 @@ const SkillRadar = memo(function SkillRadar({ analysis }) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--primary)]/10 border border-[var(--primary)]/20 text-[10px] font-bold text-[var(--primary)] uppercase tracking-widest mb-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-(--primary)/10 border border-(--primary)/20 text-[10px] font-bold text-(--primary) uppercase tracking-widest mb-2">
             <TrendingUp size={11} /> Skill Intelligence
           </div>
           <h3 className="text-xl font-bold text-white">Skill Radar Analysis</h3>
-          <p className="text-[var(--text-muted)] text-sm mt-1">Visual representation of your competency alignment</p>
+          <p className="text-(--text-muted) text-sm mt-1">Visual representation of your competency alignment</p>
         </div>
         <div className="flex items-center gap-4 shrink-0">
           <div className="text-center">
             <p className="text-2xl font-black text-emerald-400">{matchedCount}</p>
-            <p className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] font-bold">Matched</p>
+            <p className="text-[10px] uppercase tracking-widest text-(--text-muted) font-bold">Matched</p>
           </div>
-          <div className="w-px h-8 bg-[var(--border)]" />
+          <div className="w-px h-8 bg-(--border)" />
           <div className="text-center">
             <p className="text-2xl font-black text-rose-400">{missingCount}</p>
-            <p className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] font-bold">Missing</p>
+            <p className="text-[10px] uppercase tracking-widest text-(--text-muted) font-bold">Missing</p>
           </div>
-          <div className="w-px h-8 bg-[var(--border)]" />
+          <div className="w-px h-8 bg-(--border)" />
           <div className="text-center">
-            <p className="text-2xl font-black text-[var(--accent)]">{matchPct}%</p>
-            <p className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] font-bold">Coverage</p>
+            <p className="text-2xl font-black text-(--accent)">{matchPct}%</p>
+            <p className="text-[10px] uppercase tracking-widest text-(--text-muted) font-bold">Coverage</p>
           </div>
         </div>
       </div>
@@ -186,10 +187,10 @@ const SkillRadar = memo(function SkillRadar({ analysis }) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
-              className="p-4 rounded-2xl bg-white/[0.03] border border-[var(--border)]"
+              className="p-4 rounded-2xl bg-white/3 border border-(--border)"
             >
               <div className="flex justify-between items-center mb-2">
-                <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest">Overall Skill Match</span>
+                <span className="text-xs font-bold text-(--text-muted) uppercase tracking-widest">Overall Skill Match</span>
                 <span className="text-sm font-black text-white">{matchPct}%</span>
               </div>
               <div className="h-2 rounded-full bg-white/5 overflow-hidden">

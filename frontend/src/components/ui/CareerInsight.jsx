@@ -1,10 +1,10 @@
 import { memo } from 'react';
-import { motion } from 'framer-motion';
 import {
   Briefcase, TrendingUp, BookOpen, FileEdit,
   ChevronRight, Sparkles, Star, Target, Lightbulb
 } from 'lucide-react';
 import GlassCard from './GlassCard';
+import { motion } from 'framer-motion';
 
 // Parse recommendations text into structured sections
 function parseInsights(analysis) {
@@ -35,6 +35,7 @@ function parseInsights(analysis) {
   return { recommendations, strengths, roles, growthAreas, learnings };
 }
 
+// eslint-disable-next-line no-unused-vars
 const SectionHeader = ({ icon: Icon, label, color = 'var(--primary)' }) => (
   <div className="flex items-center gap-2 mb-4">
     <div
@@ -74,11 +75,11 @@ const CareerInsight = memo(function CareerInsight({ analysis }) {
       <motion.div variants={itemVariants}>
         <GlassCard glow className="p-8">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[var(--primary)] to-purple-600 flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(59,130,246,0.3)]">
+            <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-(--primary) to-purple-600 flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(59,130,246,0.3)]">
               <Sparkles size={22} className="text-white" />
             </div>
             <div className="flex-1">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--accent)]/10 border border-[var(--accent)]/20 text-[10px] font-bold text-[var(--accent)] uppercase tracking-widest mb-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-(--accent)/10 border border-(--accent)/20 text-[10px] font-bold text-(--accent) uppercase tracking-widest mb-2">
                 AI Engine · Gemini 2.0
               </div>
               <p className="text-gray-300 text-base leading-relaxed font-serif italic">
@@ -98,15 +99,15 @@ const CareerInsight = memo(function CareerInsight({ analysis }) {
               {roles.map((role, i) => (
                 <div
                   key={i}
-                  className="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] hover:border-[var(--primary)]/20 transition-all group"
+                  className="flex items-center justify-between p-3 rounded-xl bg-white/3 border border-white/5 hover:bg-white/6 hover:border-(--primary)/20 transition-all group"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 rounded-lg bg-[var(--primary)]/10 flex items-center justify-center">
-                      <Star size={11} className="text-[var(--primary)]" />
+                    <div className="w-6 h-6 rounded-lg bg-(--primary)/10 flex items-center justify-center">
+                      <Star size={11} className="text-(--primary)" />
                     </div>
                     <span className="text-sm font-semibold text-gray-200">{role}</span>
                   </div>
-                  <ChevronRight size={14} className="text-[var(--text-muted)] group-hover:text-[var(--primary)] transition-colors" />
+                  <ChevronRight size={14} className="text-(--text-muted) group-hover:text-(--primary) transition-colors" />
                 </div>
               ))}
             </div>
@@ -124,7 +125,7 @@ const CareerInsight = memo(function CareerInsight({ analysis }) {
                   <p className="text-sm text-gray-300 leading-relaxed">{s}</p>
                 </div>
               )) : (
-                <p className="text-[var(--text-muted)] text-sm italic">No strengths identified yet.</p>
+                <p className="text-(--text-muted) text-sm italic">No strengths identified yet.</p>
               )}
             </div>
           </GlassCard>
@@ -146,7 +147,7 @@ const CareerInsight = memo(function CareerInsight({ analysis }) {
                 ))}
               </div>
             ) : (
-              <p className="text-[var(--text-muted)] text-sm italic">No critical growth gaps detected.</p>
+              <p className="text-(--text-muted) text-sm italic">No critical growth gaps detected.</p>
             )}
           </GlassCard>
         </motion.div>
@@ -164,13 +165,13 @@ const CareerInsight = memo(function CareerInsight({ analysis }) {
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-gray-200">{item.topic}</p>
-                      <p className="text-[10px] text-[var(--text-muted)] font-mono">{item.resource}</p>
+                      <p className="text-[10px] text-(--text-muted) font-mono">{item.resource}</p>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-[var(--text-muted)] text-sm italic">No specific learning path identified.</p>
+              <p className="text-(--text-muted) text-sm italic">No specific learning path identified.</p>
             )}
           </GlassCard>
         </motion.div>
@@ -180,8 +181,8 @@ const CareerInsight = memo(function CareerInsight({ analysis }) {
       <motion.div variants={itemVariants}>
         <GlassCard className="p-6">
           <SectionHeader icon={FileEdit} label="Resume Improvement Tips" color="var(--accent)" />
-          <div className="p-5 rounded-2xl bg-[var(--accent)]/5 border border-[var(--accent)]/15 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-[var(--accent)]/10 blur-3xl rounded-full pointer-events-none" />
+          <div className="p-5 rounded-2xl bg-(--accent)/5 border border-(--accent)/15 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-(--accent)/10 blur-3xl rounded-full pointer-events-none" />
             <p className="text-sm text-gray-300 leading-relaxed relative z-10">
               {recommendations
                 ? recommendations

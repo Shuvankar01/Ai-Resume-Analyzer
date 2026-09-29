@@ -1,6 +1,6 @@
-import { motion } from 'framer-motion';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { motion } from 'framer-motion';
 
 function cn(...inputs) {
   return twMerge(clsx(inputs));
@@ -27,7 +27,7 @@ export default function GlassCard({
     >
       {/* Internal ambient glow */}
       {glow && (
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-[var(--primary)]/10 blur-3xl rounded-full pointer-events-none" />
+        <div className="absolute -top-24 -right-24 w-48 h-48 bg-(--primary)/10 blur-3xl rounded-full pointer-events-none" />
       )}
       <div className="relative z-10">
         {children}

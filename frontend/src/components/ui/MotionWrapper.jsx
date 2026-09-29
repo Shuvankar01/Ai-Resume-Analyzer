@@ -1,5 +1,7 @@
-import { motion } from 'framer-motion';
+import { motion as MotionPrimitive } from 'framer-motion';
+const MotionDiv = MotionPrimitive.div;
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const fade = {
   initial: { opacity: 0 },
   animate: { opacity: 1 },
@@ -7,6 +9,7 @@ export const fade = {
   transition: { duration: 0.3 }
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const slideUp = {
   initial: { opacity: 0, y: 20 },
   animate: { opacity: 1, y: 0 },
@@ -14,6 +17,7 @@ export const slideUp = {
   transition: { duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const scaleIn = {
   initial: { opacity: 0, scale: 0.95 },
   animate: { opacity: 1, scale: 1 },
@@ -21,6 +25,7 @@ export const scaleIn = {
   transition: { duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const pageTransition = {
   initial: { opacity: 0, filter: "blur(10px)" },
   animate: { opacity: 1, filter: "blur(0px)" },
@@ -39,7 +44,7 @@ export default function MotionWrapper({ children, variant = 'fade', className = 
   const selectedVariant = variants[variant] || fade;
 
   return (
-    <motion.div
+    <MotionDiv
       initial="initial"
       animate="animate"
       exit="exit"
@@ -53,6 +58,6 @@ export default function MotionWrapper({ children, variant = 'fade', className = 
       className={className}
     >
       {children}
-    </motion.div>
+    </MotionDiv>
   );
 }

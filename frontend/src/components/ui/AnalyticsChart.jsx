@@ -1,20 +1,21 @@
-import { memo, useMemo } from 'react';
+import { memo } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
   AreaChart, Area, LineChart, Line, PieChart, Pie, Legend
 } from 'recharts';
-import { motion } from 'framer-motion';
+
 import Skeleton from './Skeleton';
 import EmptyState from './EmptyState';
 import { BarChart2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const PALETTE = ['#00f3ff', '#3b82f6', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#f43f5e'];
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload?.length) {
     return (
-      <div className="bg-[#0a0a0f]/95 border border-[var(--border)] rounded-2xl px-4 py-3 shadow-2xl text-sm">
-        <p className="text-[var(--text-muted)] font-bold text-[10px] uppercase tracking-widest mb-1">{label}</p>
+      <div className="bg-[#0a0a0f]/95 border border-(--border) rounded-2xl px-4 py-3 shadow-2xl text-sm">
+        <p className="text-(--text-muted) font-bold text-[10px] uppercase tracking-widest mb-1">{label}</p>
         {payload.map((p, i) => (
           <p key={i} style={{ color: p.color || p.stroke || PALETTE[0] }} className="font-bold">
             {p.name}: {typeof p.value === 'number' ? p.value.toFixed(1) : p.value}
@@ -145,7 +146,7 @@ const AnalyticsChart = memo(function AnalyticsChart({
       {(title || subtitle) && (
         <div className="mb-6">
           {title && <h3 className="text-lg font-bold text-white">{title}</h3>}
-          {subtitle && <p className="text-xs text-[var(--text-muted)] mt-0.5">{subtitle}</p>}
+          {subtitle && <p className="text-xs text-(--text-muted) mt-0.5">{subtitle}</p>}
         </div>
       )}
 

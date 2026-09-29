@@ -23,7 +23,7 @@ export default function Table({ columns, data, onRowClick }) {
           <thead>
             <tr>
               {columns.map((col, i) => (
-                <th key={i} className="px-6 py-4 text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em]">
+                <th key={i} className="px-6 py-4 text-[10px] font-black text-(--text-muted) uppercase tracking-[0.3em]">
                   {col.header}
                 </th>
               ))}

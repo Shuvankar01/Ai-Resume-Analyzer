@@ -1,6 +1,6 @@
 import { CheckCircle, AlertCircle, Info, X } from 'lucide-react';
 import { useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 
 export default function Toast({ message, type = 'info', duration = 3000, onClose }) {
   useEffect(() => {
@@ -14,13 +14,13 @@ export default function Toast({ message, type = 'info', duration = 3000, onClose
   const icons = {
     success: <CheckCircle className="text-emerald-400" size={20} />,
     error: <AlertCircle className="text-rose-400" size={20} />,
-    info: <Info className="text-[var(--accent)]" size={20} />
+    info: <Info className="text-(--accent)" size={20} />
   };
 
   const backgrounds = {
     success: 'bg-emerald-500/10 border-emerald-500/20',
     error: 'bg-rose-500/10 border-rose-500/20',
-    info: 'bg-[var(--accent)]/10 border-[var(--accent)]/20'
+    info: 'bg-(--accent)/10 border-(--accent)/20'
   };
 
   return (
@@ -35,7 +35,7 @@ export default function Toast({ message, type = 'info', duration = 3000, onClose
         <div className={`flex items-center gap-4 px-6 py-4 rounded-2xl card-glass shadow-2xl ${backgrounds[type]}`}>
           {icons[type]}
           <p className="text-sm font-medium text-white pr-4">{message}</p>
-          <button onClick={onClose} className="text-[var(--text-muted)] hover:text-white transition">
+          <button onClick={onClose} className="text-(--text-muted) hover:text-white transition">
             <X size={18} />
           </button>
         </div>

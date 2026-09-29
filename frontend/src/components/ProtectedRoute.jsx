@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { Loader2 } from 'lucide-react';
 
 export default function ProtectedRoute({ children, requiredRole }) {
-  const { user, loading, isAuthenticated, role } = useAuth();
+  const { loading, isAuthenticated, role } = useAuth();
 
   // Show premium spinner while restoring user session
   if (loading) {

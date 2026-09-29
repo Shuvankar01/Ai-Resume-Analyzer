@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { motion, useSpring, useTransform } from 'framer-motion';
+import { useSpring, useTransform, motion } from 'framer-motion';
 
 export default function AnimatedCounter({ 
   value, 
@@ -16,7 +16,8 @@ export default function AnimatedCounter({
 
   useEffect(() => {
     springValue.set(value);
-    setHasAnimated(true);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setHasAnimated(true); // Intentional: we need to track if animation started
   }, [value, springValue]);
 
   const displayValue = useTransform(springValue, (current) => {

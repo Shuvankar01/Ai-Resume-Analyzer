@@ -1,17 +1,17 @@
 import { CheckSquare, ArrowRight, Zap, Target, BookOpen } from 'lucide-react';
 
-export default function ImprovementRoadmap({ analysis }) {
+export default function ImprovementRoadmap({ improvements }) {
+  const analysis = improvements;
   if (!analysis) return null;
 
   const missing = analysis.missing_keywords || [];
-  const score = analysis.ats_score ?? 0;
 
   // Generate dynamic steps based on analysis data
   const steps = [
     {
       title: 'Integrate Core Skills',
       icon: Target,
-      color: 'text-[var(--accent)] bg-[var(--accent)]/10 border-[var(--accent)]/20',
+      color: 'text-(--accent) bg-(--accent)/10 border-(--accent)/20',
       desc: missing.length > 0
         ? `Incorporate missing keywords: ${missing.slice(0, 3).join(', ')} in your project descriptions.`
         : 'Align resume keywords to job requirements.'
@@ -33,9 +33,9 @@ export default function ImprovementRoadmap({ analysis }) {
   ];
 
   return (
-    <div className="card-glass rounded-2xl p-6 border border-[var(--border)] relative overflow-hidden">
+    <div className="card-glass rounded-2xl p-6 border border-(--border) relative overflow-hidden">
       <div className="flex items-center gap-2 mb-6">
-        <CheckSquare size={18} className="text-[var(--accent)]" />
+        <CheckSquare size={18} className="text-(--accent)" />
         <h4 className="text-sm font-black text-white uppercase tracking-wider">AI Resume Improvement Roadmap</h4>
       </div>
 
@@ -45,7 +45,7 @@ export default function ImprovementRoadmap({ analysis }) {
           return (
             <div key={idx} className="relative group">
               {/* Node indicator */}
-              <span className="absolute -left-[31px] top-1 w-2.5 h-2.5 rounded-full bg-[#05050A] border-[3px] border-[var(--primary)] group-hover:scale-125 transition-transform" />
+              <span className="absolute -left-7.75 top-1 w-2.5 h-2.5 rounded-full bg-[#05050A] border-3 border-(--primary) group-hover:scale-125 transition-transform" />
 
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2">
@@ -54,7 +54,7 @@ export default function ImprovementRoadmap({ analysis }) {
                   </div>
                   <h5 className="text-xs font-black text-white tracking-tight">{step.title}</h5>
                 </div>
-                <p className="text-xs text-[var(--text-muted)] leading-relaxed">{step.desc}</p>
+                <p className="text-xs text-(--text-muted) leading-relaxed">{step.desc}</p>
               </div>
             </div>
           );

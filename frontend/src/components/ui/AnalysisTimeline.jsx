@@ -1,6 +1,6 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { UploadCloud, FileText, Brain, Target, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
+import { CheckCircle2, Loader2, Sparkles, BrainCircuit, FileSearch, ShieldCheck, UploadCloud, FileText, Brain, Target, AlertCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 
 const STEPS = [
   { id: 'upload', label: 'Resume Uploaded', icon: UploadCloud, desc: 'Securely uploaded to system storage' },
@@ -16,6 +16,7 @@ export default function AnalysisTimeline({ isProcessing = false, jobStatus = 'pe
 
   useEffect(() => {
     if (!isProcessing) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrentStepIdx(0);
       setProgressVal(10);
       return;
@@ -55,18 +56,18 @@ export default function AnalysisTimeline({ isProcessing = false, jobStatus = 'pe
   if (!isProcessing) return null;
 
   return (
-    <div className="fixed inset-0 bg-[var(--background)]/80 backdrop-blur-md flex flex-col items-center justify-center z-[100] p-4">
+    <div className="fixed inset-0 bg-(--background)/80 backdrop-blur-md flex flex-col items-center justify-center z-[100] p-4">
       <motion.div 
         initial={{ scale: 0.95, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.95, opacity: 0, y: 20 }}
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className="relative w-full max-w-lg card-glass rounded-[32px] p-8 md:p-10 overflow-hidden shadow-2xl glow-border"
+        className="relative w-full max-w-lg card-glass rounded-4xl p-8 md:p-10 overflow-hidden shadow-2xl glow-border"
       >
         {/* Scanning laser effect */}
         {jobStatus !== 'failed' && jobStatus !== 'done' && (
           <motion.div
-            className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent shadow-[0_0_20px_var(--accent)] z-20"
+            className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-transparent via-(--accent) to-transparent shadow-[0_0_20px_var(--accent)] z-20"
             animate={{ top: ['0%', '100%', '0%'] }}
             transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
           />
@@ -74,13 +75,13 @@ export default function AnalysisTimeline({ isProcessing = false, jobStatus = 'pe
 
         <div className="relative z-10 flex flex-col items-center">
           {/* Header */}
-          <div className="w-16 h-16 rounded-2xl bg-[var(--primary)]/10 flex items-center justify-center border border-[var(--primary)]/20 mb-6 relative">
-            <Brain size={28} className="text-[var(--primary)] animate-pulse" />
+          <div className="w-16 h-16 rounded-2xl bg-(--primary)/10 flex items-center justify-center border border-(--primary)/20 mb-6 relative">
+            <Brain size={28} className="text-(--primary) animate-pulse" />
             {jobStatus !== 'failed' && jobStatus !== 'done' && (
               <motion.div 
                 animate={{ rotate: 360 }} 
                 transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
-                className="absolute inset-[-4px] border border-[var(--primary)]/30 rounded-[20px] border-t-[var(--accent)]"
+                className="absolute inset-[-4px] border border-(--primary)/30 rounded-[20px] border-t-(--accent)"
               />
             )}
           </div>
@@ -88,7 +89,7 @@ export default function AnalysisTimeline({ isProcessing = false, jobStatus = 'pe
           <h3 className="text-2xl font-black text-white mb-1 tracking-tight">
             {jobStatus === 'failed' ? 'Analysis Failed' : jobStatus === 'done' ? 'Intelligence Complete' : 'Analyzing Candidate Profile'}
           </h3>
-          <p className="text-[var(--text-muted)] text-sm mb-8 text-center max-w-sm">
+          <p className="text-(--text-muted) text-sm mb-8 text-center max-w-sm">
             {jobStatus === 'failed' 
               ? 'An error occurred during extraction.' 
               : jobStatus === 'done' 
@@ -99,7 +100,7 @@ export default function AnalysisTimeline({ isProcessing = false, jobStatus = 'pe
           {/* Progress Bar */}
           <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden mb-8 relative border border-white/5">
             <motion.div 
-              className={`h-full rounded-full ${jobStatus === 'failed' ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] shadow-[0_0_10px_var(--accent)]'}`}
+              className={`h-full rounded-full ${jobStatus === 'failed' ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-linear-to-r from-(--primary) to-(--accent) shadow-[0_0_10px_var(--accent)]'}`}
               initial={{ width: '10%' }}
               animate={{ width: `${progressVal}%` }}
               transition={{ duration: 0.5, ease: 'easeOut' }}
@@ -107,7 +108,7 @@ export default function AnalysisTimeline({ isProcessing = false, jobStatus = 'pe
           </div>
 
           {/* Timeline Steps */}
-          <div className="w-full space-y-6 text-left relative before:absolute before:left-5 before:top-3 before:bottom-3 before:w-[2px] before:bg-white/5">
+          <div className="w-full space-y-6 text-left relative before:absolute before:left-5 before:top-3 before:bottom-3 before:w-0.5 before:bg-white/5">
             {STEPS.map((step, index) => {
               const isCompleted = index < currentStepIdx && jobStatus !== 'failed';
               const isActive = index === currentStepIdx && jobStatus !== 'failed';
@@ -124,7 +125,7 @@ export default function AnalysisTimeline({ isProcessing = false, jobStatus = 'pe
                   {/* Node Icon/Indicator */}
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center border relative z-10 transition-all ${
                     isCompleted ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' :
-                    isActive ? 'bg-[var(--accent)]/10 border-[var(--accent)]/40 text-[var(--accent)] shadow-[0_0_15px_rgba(0,243,255,0.2)]' :
+                    isActive ? 'bg-(--accent)/10 border-(--accent)/40 text-(--accent) shadow-[0_0_15px_rgba(0,243,255,0.2)]' :
                     isFailedStep ? 'bg-red-500/10 border-red-500/40 text-red-400' :
                     'bg-white/5 border-white/10 text-gray-500'
                   }`}>
@@ -149,7 +150,7 @@ export default function AnalysisTimeline({ isProcessing = false, jobStatus = 'pe
                     }`}>
                       {step.label}
                     </h4>
-                    <p className="text-xs text-[var(--text-muted)] line-clamp-1">
+                    <p className="text-xs text-(--text-muted) line-clamp-1">
                       {isFailedStep ? errorMsg || 'Extraction or connection failed' : step.desc}
                     </p>
                   </div>

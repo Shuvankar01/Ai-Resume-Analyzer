@@ -1,9 +1,9 @@
 import { memo } from 'react';
-import { motion } from 'framer-motion';
 import { TrendingUp, Star, Zap } from 'lucide-react';
 import ProgressRing from './ProgressRing';
+import { motion } from 'framer-motion';
 
-const CandidateMatchCard = memo(function CandidateMatchCard({ candidate, rank }) {
+const CandidateMatchCard = memo(function CandidateMatchCard({ candidate, rank, onClick }) {
   const { name, score } = candidate;
 
   const getInitials = (n) =>
@@ -27,19 +27,20 @@ const CandidateMatchCard = memo(function CandidateMatchCard({ candidate, rank })
 
   return (
     <motion.div
+      onClick={onClick}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: rank * 0.07, ease: 'easeOut' }}
       whileHover={{ y: -4, transition: { duration: 0.2 } }}
-      className="card-glass rounded-3xl p-6 cursor-pointer group relative overflow-hidden border border-white/5 hover:border-[var(--primary)]/20 transition-all"
+      className="card-glass rounded-3xl p-6 cursor-pointer group relative overflow-hidden border border-white/5 hover:border-(--primary)/20 transition-all"
     >
       {/* Rank badge */}
-      <div className="absolute top-4 left-4 w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-[10px] font-black text-[var(--text-muted)] border border-white/5">
+      <div className="absolute top-4 left-4 w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-[10px] font-black text-(--text-muted) border border-white/5">
         #{rank + 1}
       </div>
 
       {/* Ambient glow on hover */}
-      <div className={`absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br ${scoreBg} blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none`} />
+      <div className={`absolute -top-10 -right-10 w-32 h-32 bg-linear-to-br ${scoreBg} blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none`} />
 
       <div className="flex items-center gap-4 mt-4">
         {/* Avatar */}
@@ -75,7 +76,7 @@ const CandidateMatchCard = memo(function CandidateMatchCard({ candidate, rank })
       {/* Score Bar */}
       <div className="mt-5">
         <div className="flex justify-between items-center mb-1.5">
-          <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-1">
+          <span className="text-[10px] font-bold text-(--text-muted) uppercase tracking-widest flex items-center gap-1">
             <TrendingUp size={9} /> ATS Integrity Score
           </span>
           <span className="text-[10px] font-black" style={{ color: scoreColor }}>
@@ -95,10 +96,10 @@ const CandidateMatchCard = memo(function CandidateMatchCard({ candidate, rank })
 
       {/* Bottom indicator */}
       <div className="mt-4 flex items-center justify-between">
-        <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-muted)] font-mono uppercase">
-          <Zap size={9} className="text-[var(--accent)]" /> AI Ranked
+        <div className="flex items-center gap-1.5 text-[10px] text-(--text-muted) font-mono uppercase">
+          <Zap size={9} className="text-(--accent)" /> AI Ranked
         </div>
-        <div className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--primary)]/20">
+        <div className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-(--primary)/10 text-(--primary) border border-(--primary)/20">
           View Profile →
         </div>
       </div>

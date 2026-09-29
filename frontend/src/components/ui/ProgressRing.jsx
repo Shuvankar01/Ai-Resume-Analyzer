@@ -1,4 +1,5 @@
-import { motion } from 'framer-motion';
+// eslint-disable-next-line no-unused-vars
+import { motion } from 'framer-motion'; // Used as motion.circle
 
 export default function ProgressRing({ 
   score = 0, 

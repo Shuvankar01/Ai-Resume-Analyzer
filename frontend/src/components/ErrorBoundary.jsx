@@ -22,14 +22,14 @@ export default class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-[var(--background)] flex flex-col items-center justify-center p-4">
-          <div className="relative w-full max-w-md card-glass rounded-[32px] p-8 md:p-10 text-center shadow-2xl glow-border">
+        <div className="min-h-screen bg-(--background) flex flex-col items-center justify-center p-4">
+          <div className="relative w-full max-w-md card-glass rounded-4xl p-8 md:p-10 text-center shadow-2xl glow-border">
             <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mx-auto mb-6">
               <AlertTriangle className="text-rose-500" size={28} />
             </div>
 
             <h2 className="text-2xl font-black text-white tracking-tight mb-2">Application Crash</h2>
-            <p className="text-sm text-[var(--text-muted)] font-medium mb-6">
+            <p className="text-sm text-(--text-muted) font-medium mb-6">
               A runtime rendering error has occurred. We have isolated the crash to preserve user session security.
             </p>
 
@@ -41,7 +41,7 @@ export default class ErrorBoundary extends React.Component {
 
             <button
               onClick={this.handleReload}
-              className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary)]/90 text-white font-bold transition-all shadow-[0_0_20px_rgba(59,130,246,0.3)] hover-lift"
+              className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-(--primary) hover:bg-(--primary)/90 text-white font-bold transition-all shadow-[0_0_20px_rgba(59,130,246,0.3)] hover-lift"
             >
               <RefreshCw size={16} /> Reload Application
             </button>
