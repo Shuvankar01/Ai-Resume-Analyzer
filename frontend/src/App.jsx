@@ -36,10 +36,10 @@ function GlobalAlert() {
 
 function LoadingFallback() {
   return (
-    <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+    <div className="min-h-screen bg-(--background) flex items-center justify-center">
       <div className="relative">
-        <Loader2 className="text-[var(--accent)] animate-spin" size={48} />
-        <div className="absolute inset-0 bg-[var(--accent)]/10 blur-xl rounded-full"></div>
+        <Loader2 className="text-(--accent) animate-spin" size={48} />
+        <div className="absolute inset-0 bg-(--accent)/10 blur-xl rounded-full"></div>
       </div>
     </div>
   );
@@ -51,7 +51,7 @@ function AppRoutes() {
   if (loading) return <LoadingFallback />;
 
   return (
-    <div className="min-h-screen text-[var(--text)] bg-[var(--background)]">
+    <div className="min-h-screen text-(--text) bg-(--background)">
       <GlobalAlert />
       <Suspense fallback={<LoadingFallback />}>
         <Routes>

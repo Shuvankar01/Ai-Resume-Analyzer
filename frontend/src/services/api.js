@@ -66,12 +66,21 @@ api.interceptors.response.use(
     }
 
     // 1. Network / Retry Logic
-    if (!response || (response.status >= 500 && response.status <= 504)) {
+    // A canceled request (e.g. one dropped by the duplicate-GET guard above) is not a
+    // failure. Retrying it re-uses the same already-aborted signal, so it can only ever
+    // cancel again -- which used to burn both retries on a request that was fine.
+    const wasCanceled = axios.isCancel(error);
+    if (!wasCanceled && (!response || (response.status >= 500 && response.status <= 504))) {
       config._retryCount = config._retryCount || 0;
       
       if (config._retryCount < 2) {
         config._retryCount += 1;
         logger.warn(`Retrying request (${config._retryCount}/2)...`, config.url);
+        
+        // Never re-issue on a dead abort signal
+        if (config.signal && config.signal.aborted) {
+          return Promise.reject(error);
+        }
         
         // Exponential backoff
         const backoff = Math.pow(2, config._retryCount) * 1000;
@@ -85,7 +94,13 @@ api.interceptors.response.use(
       logger.api(config.method, config.url, response.status, error);
       
       if (response.status === 401) {
-        if (window.location.pathname !== '/') {
+        // Only treat this as an *expired session* when a credential actually existed.
+        // `GET /auth/me` is also the "am I logged in?" probe run on startup, and a 401
+        // for a visitor who never had a session is expected -- wiping storage and hard
+        // redirecting on it bounced signed-out visitors off /login to the landing page.
+        // A genuinely expired session still has a token, so it is still cleared+redirected.
+        const hadSession = !!localStorage.getItem('token');
+        if (hadSession && window.location.pathname !== '/') {
           localStorage.clear();
           window.location.href = '/?session=expired';
         }
