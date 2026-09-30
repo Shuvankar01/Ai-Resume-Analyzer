@@ -82,6 +82,32 @@ const subscribeToStatus = (callback) => {
   return () => window.removeEventListener(EVENTS.STATUS_UPDATED, handler);
 };
 
+// --- Server sync -------------------------------------------------------
+// Candidate actions are persisted server-side by recruiterService. The rows it
+// returns are mirrored into the local status map on load, so a status set on
+// another device (or before a reload) is reflected here. This module stays the
+// event bus — it is not a second source of truth, just a local mirror.
+const hydrateStatusesFromServer = (actions = []) => {
+  if (!Array.isArray(actions) || actions.length === 0) return getAllStatuses();
+
+  const statuses = getAllStatuses();
+  // `actions` arrives newest-first, so walk it oldest-first and let later
+  // writes win — the most recent action is the one that sticks.
+  [...actions].reverse().forEach((action) => {
+    const key = action.candidate_id ?? action.candidate_name;
+    if (key !== undefined && key !== null && action.status) {
+      statuses[key] = action.status;
+      // Older entries were written against the display name; keep them in
+      // agreement so a name-keyed lookup does not report a stale status.
+      if (action.candidate_name) statuses[action.candidate_name] = action.status;
+    }
+  });
+
+  localStorage.setItem(STATUS_KEY, JSON.stringify(statuses));
+  window.dispatchEvent(new CustomEvent(EVENTS.STATUS_UPDATED, { detail: { hydrated: true } }));
+  return statuses;
+};
+
 // --- Resume History Management ---
 const getResumeHistory = () => {
   try {
@@ -120,6 +146,7 @@ export const activityService = {
   getCandidateStatus,
   updateCandidateStatus,
   subscribeToStatus,
+  hydrateStatusesFromServer,
   getResumeHistory,
   addResume,
   subscribeToResumes

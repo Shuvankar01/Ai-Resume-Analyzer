@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import logger from '../utils/logger';
+import { usePreferences } from './PreferencesContext';
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const AppContext = createContext();
@@ -10,18 +11,26 @@ export function AppProvider({ children }) {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [globalLoading, setGlobalLoading] = useState(false);
   const [systemAlert, setSystemAlert] = useState(null);
+  const { preferences } = usePreferences();
+  const showConnectionAlerts = preferences.pref_connection_alerts;
 
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      setSystemAlert({ message: 'Back online', type: 'success' });
-      setTimeout(() => setSystemAlert(null), 3000);
+      // Connectivity state is always tracked, but the banner respects the
+      // user's "Connection Alerts" preference.
+      if (showConnectionAlerts) {
+        setSystemAlert({ message: 'Back online', type: 'success' });
+        setTimeout(() => setSystemAlert(null), 3000);
+      }
       logger.info('App went online');
     };
 
     const handleOffline = () => {
       setIsOnline(false);
-      setSystemAlert({ message: 'You are currently offline. Some features may be unavailable.', type: 'error' });
+      if (showConnectionAlerts) {
+        setSystemAlert({ message: 'You are currently offline. Some features may be unavailable.', type: 'error' });
+      }
       logger.warn('App went offline');
     };
 
@@ -32,7 +41,7 @@ export function AppProvider({ children }) {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, []);
+  }, [showConnectionAlerts]);
 
   return (
     <AppContext.Provider value={{ 

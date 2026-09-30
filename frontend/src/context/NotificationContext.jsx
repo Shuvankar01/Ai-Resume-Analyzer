@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle, AlertCircle, AlertTriangle, Info, X } from 'lucide-react';
+import { usePreferences } from './PreferencesContext';
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const NotificationContext = createContext();
@@ -10,13 +11,22 @@ export const NotificationContext = createContext();
 export function NotificationProvider({ children }) {
   const [notifications, setNotifications] = useState([]);
   const [toasts, setToasts] = useState([]);
+  const { preferences } = usePreferences();
 
-  const addNotification = useCallback((message, type = 'info') => {
+  const addNotification = useCallback((message, type = 'info', options = {}) => {
+    const { category = 'system' } = options;
+
+    // Feature components call this unconditionally; the user's preferences
+    // decide whether anything is actually raised.
+    if (!preferences.pref_notifications) return null;
+    if (category === 'analysis' && !preferences.pref_analysis_alerts) return null;
+
     const id = Math.random().toString(36).substring(2, 9);
     const newNotif = {
       id,
       message,
       type,
+      category,
       isRead: false,
       timestamp: new Date()
     };
@@ -31,7 +41,9 @@ export function NotificationProvider({ children }) {
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 4000);
-  }, []);
+
+    return id;
+  }, [preferences]);
 
   const dismissToast = useCallback((id) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -70,6 +82,7 @@ export function NotificationProvider({ children }) {
       value={{
         notifications,
         addNotification,
+        dismissToast,
         markAsRead,
         markAllAsRead,
         clearAll

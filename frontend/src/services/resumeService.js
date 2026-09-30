@@ -1,6 +1,44 @@
 import api from './api';
+import logger from '../utils/logger';
+
+// Local snapshot cache backing the "Offline Cache" preference. Additive: the
+// existing endpoints keep their exact contract, and consumers opt in by
+// reading a snapshot when a request fails.
+const CACHE_PREFIX = 'resume_ai_cache:';
+
+const CACHE_KEYS = {
+  dashboardStats: 'dashboard_stats',
+  history: 'history',
+};
+
+const getCached = (name) => {
+  try {
+    const raw = localStorage.getItem(`${CACHE_PREFIX}${name}`);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' && 'data' in parsed ? parsed : null;
+  } catch (err) {
+    logger.warn(`Could not read cached "${name}"`, err);
+    return null;
+  }
+};
+
+const setCached = (name, data) => {
+  try {
+    localStorage.setItem(
+      `${CACHE_PREFIX}${name}`,
+      JSON.stringify({ data, cachedAt: new Date().toISOString() })
+    );
+  } catch (err) {
+    logger.warn(`Could not cache "${name}"`, err);
+  }
+};
 
 export const resumeService = {
+  CACHE_KEYS,
+  getCached,
+  setCached,
+
   upload: async (file) => {
     const formData = new FormData();
     formData.append('file', file);
