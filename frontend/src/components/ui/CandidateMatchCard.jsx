@@ -1,10 +1,22 @@
 import { memo } from 'react';
 import { TrendingUp, Star, Zap } from 'lucide-react';
 import ProgressRing from './ProgressRing';
+import Badge from './Badge';
+import CandidateActions from '../recruiter/CandidateActions';
+import { activityService } from '../../services/activityService';
+import { STATUS_VARIANTS } from '../../hooks/useCandidateActions';
 import { motion } from 'framer-motion';
 
-const CandidateMatchCard = memo(function CandidateMatchCard({ candidate, rank, onClick }) {
+/**
+ * AI-ranked candidate card.
+ *
+ * `showActions` renders the four recruiter decisions inline so a recruiter can
+ * shortlist / reject / schedule / offer without opening the drawer. The action
+ * block stops click propagation so pressing a button never opens the drawer.
+ */
+const CandidateMatchCard = memo(function CandidateMatchCard({ candidate, rank, onClick, showActions = false }) {
   const { name, score } = candidate;
+  const status = activityService.getCandidateStatus(candidate.id ?? name);
 
   const getInitials = (n) =>
     n?.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2) || '??';
@@ -57,11 +69,16 @@ const CandidateMatchCard = memo(function CandidateMatchCard({ candidate, rank, o
         {/* Name & Label */}
         <div className="flex-1 min-w-0">
           <h4 className="text-base font-bold text-white truncate">{name}</h4>
-          <span
-            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${scoreLabelColor} mt-1`}
-          >
-            <Star size={9} /> {scoreLabel}
-          </span>
+          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+            <span
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${scoreLabelColor}`}
+            >
+              <Star size={9} /> {scoreLabel}
+            </span>
+            <Badge variant={STATUS_VARIANTS[status] || 'default'} className="!text-[9px] !px-2 !py-0">
+              {status}
+            </Badge>
+          </div>
         </div>
 
         {/* Score Ring */}
@@ -103,6 +120,17 @@ const CandidateMatchCard = memo(function CandidateMatchCard({ candidate, rank, o
           View Profile →
         </div>
       </div>
+
+      {/* Inline recruiter decisions — never triggers the drawer. */}
+      {showActions && (
+        <div
+          className="mt-4 pt-4 border-t border-white/5"
+          onClick={(e) => e.stopPropagation()}
+          role="presentation"
+        >
+          <CandidateActions candidate={candidate} size="sm" />
+        </div>
+      )}
     </motion.div>
   );
 });

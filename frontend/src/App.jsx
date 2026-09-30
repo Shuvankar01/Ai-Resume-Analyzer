@@ -17,6 +17,7 @@ const TalentPool = lazy(() => import('./pages/TalentPool'));
 const Preferences = lazy(() => import('./pages/Preferences'));
 const Profile = lazy(() => import('./pages/Profile'));
 const ResumeCompare = lazy(() => import('./pages/ResumeCompare'));
+const SystemOperations = lazy(() => import('./pages/SystemOperations'));
 
 function GlobalAlert() {
   const { systemAlert } = useApp();
@@ -94,6 +95,16 @@ function AppRoutes() {
             <Route path="profile" element={<Profile />} />
           </Route>
 
+          {/* Internal platform telemetry — kept out of the hiring surfaces. */}
+          <Route 
+            path="/admin/system" 
+            element={
+              <ProtectedRoute requiredRole="recruiter">
+                <SystemOperations />
+              </ProtectedRoute>
+            } 
+          />
+
           {/* Catch-all */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
@@ -104,19 +115,22 @@ function AppRoutes() {
 
 import ErrorBoundary from './components/ErrorBoundary';
 import { NotificationProvider } from './context/NotificationContext';
+import { PreferencesProvider } from './context/PreferencesContext';
 
 function App() {
   return (
     <ErrorBoundary>
-      <AppProvider>
-        <NotificationProvider>
-          <AuthProvider>
-            <BrowserRouter>
-              <AppRoutes />
-            </BrowserRouter>
-          </AuthProvider>
-        </NotificationProvider>
-      </AppProvider>
+      <PreferencesProvider>
+        <AppProvider>
+          <NotificationProvider>
+            <AuthProvider>
+              <BrowserRouter>
+                <AppRoutes />
+              </BrowserRouter>
+            </AuthProvider>
+          </NotificationProvider>
+        </AppProvider>
+      </PreferencesProvider>
     </ErrorBoundary>
   );
 }

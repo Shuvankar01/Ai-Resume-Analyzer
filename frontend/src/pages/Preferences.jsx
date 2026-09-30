@@ -1,157 +1,334 @@
-/* eslint-disable no-unused-vars */
 import { useState } from 'react';
-import { Settings, Bell, Shield, Palette, BrainCircuit, Activity } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+  Settings, Bell, Shield, Palette, BrainCircuit, Activity,
+  ChevronDown, Check, Minus, RotateCcw
+} from 'lucide-react';
 import GlassCard from '../components/ui/GlassCard';
-import useToast from '../hooks/useToast';
-import Toast from '../components/ui/Toast';
-import { activityService } from '../services/activityService';
+import { usePreferences } from '../context/PreferencesContext';
 
-function ToggleItem({ label, description, defaultChecked = false, storageKey }) {
-  const [checked, setChecked] = useState(() => {
-    try {
-      const saved = localStorage.getItem(storageKey);
-      return saved !== null ? JSON.parse(saved) : defaultChecked;
-    } catch { return defaultChecked; }
-  });
-  const { addToast, toasts, removeToast } = useToast();
+const TABS = [
+  {
+    id: 'notifications',
+    label: 'Notifications',
+    icon: Bell,
+    title: 'Notifications',
+    description: 'Choose which in-app alerts reach the notification bell.',
+    items: [
+      {
+        key: 'pref_notifications',
+        label: 'In-App Alerts',
+        description: 'Master switch for the notification bell and its toast popups.'
+      },
+      {
+        key: 'pref_analysis_alerts',
+        label: 'Analysis Alerts',
+        description: 'Notify when a resume analysis finishes or fails.'
+      },
+      {
+        key: 'pref_connection_alerts',
+        label: 'Connection Alerts',
+        description: 'Show the banner when the app goes offline or comes back online.'
+      }
+    ]
+  },
+  {
+    id: 'security',
+    label: 'Security',
+    icon: Shield,
+    title: 'Security',
+    description: 'Control how long an idle session stays signed in.',
+    items: [
+      {
+        key: 'pref_idle_timeout',
+        label: 'Auto Sign-Out',
+        description: 'Sign out automatically after a stretch with no mouse or keyboard activity.',
+        type: 'select',
+        options: [
+          { value: 'off', label: 'Off' },
+          { value: '15', label: '15 minutes' },
+          { value: '30', label: '30 minutes' },
+          { value: '60', label: '60 minutes' }
+        ]
+      },
+      {
+        key: 'pref_session_warning',
+        label: 'Expiry Warning',
+        description: 'Warn 60 seconds before an idle auto sign-out happens.'
+      }
+    ]
+  },
+  {
+    id: 'appearance',
+    label: 'Appearance',
+    icon: Palette,
+    title: 'Appearance',
+    description: 'Adjust density, contrast and motion across the whole app.',
+    items: [
+      {
+        key: 'pref_compact_mode',
+        label: 'Compact Density',
+        description: 'Tighten spacing and padding everywhere to fit more on screen.'
+      },
+      {
+        key: 'pref_reduced_motion',
+        label: 'Reduced Motion',
+        description: 'Disable interface animations and transitions.'
+      },
+      {
+        key: 'pref_high_contrast',
+        label: 'High Contrast',
+        description: 'Increase text, border and surface contrast for readability.'
+      }
+    ]
+  },
+  {
+    id: 'ai',
+    label: 'AI Preferences',
+    icon: BrainCircuit,
+    title: 'AI Preferences',
+    description: 'Tune what the AI engine shows you and when it runs.',
+    items: [
+      {
+        key: 'pref_auto_analyze',
+        label: 'Auto-Analyze on Upload',
+        description: 'Run the analysis automatically as soon as a resume finishes uploading.'
+      },
+      {
+        key: 'pref_ai_recommendations',
+        label: 'AI Recommendations',
+        description: 'Show the improvement roadmap and suggested-role panels.'
+      },
+      {
+        key: 'pref_detailed_summary',
+        label: 'Detailed AI Summaries',
+        description: 'Include interview questions, learning roadmap and career growth breakdowns.'
+      }
+    ]
+  },
+  {
+    id: 'system',
+    label: 'System',
+    icon: Activity,
+    title: 'System',
+    description: 'Rendering and caching behaviour for this device.',
+    items: [
+      {
+        key: 'pref_performance_mode',
+        label: 'Performance Mode',
+        description: 'Drop glass blur and looping animations for lower GPU usage.'
+      },
+      {
+        key: 'pref_offline_cache',
+        label: 'Offline Cache',
+        description: 'Cache dashboard data locally and fall back to it when the API is unreachable.'
+      }
+    ]
+  }
+];
 
-  const handleToggle = () => {
-    const newVal = !checked;
-    setChecked(newVal);
-    localStorage.setItem(storageKey, JSON.stringify(newVal));
-    activityService.notifyPreferencesChanged({ key: storageKey, value: newVal });
-    addToast(`${label} ${newVal ? 'enabled' : 'disabled'}`, 'success');
-    
-    // Immediate DOM Effects
-    if (storageKey === 'pref_dark_mode') {
-      if (newVal) document.body.classList.add('dark');
-      else document.body.classList.remove('dark');
-    }
-    if (storageKey === 'pref_reduced_motion') {
-      if (newVal) document.body.classList.add('reduce-motion');
-      else document.body.classList.remove('reduce-motion');
-    }
-  };
-
+function StatusPill({ active, activeLabel = 'Active' }) {
   return (
-    <>
-      <div className="flex items-center justify-between p-5 rounded-2xl bg-(--surface-elevated) border border-(--border) hover:bg-white/2 transition-colors">
-        <div className="space-y-1 pr-4">
-          <div className="text-sm font-bold text-white tracking-tight">{label}</div>
-          <div className="text-[10px] text-(--text-muted) uppercase tracking-widest">{description}</div>
-        </div>
-        <button 
-          type="button"
-          role="switch"
-          aria-checked={checked}
-          aria-label={`Toggle ${label}`}
-          onClick={handleToggle}
-          className={`w-12 h-6 rounded-full relative transition-colors shrink-0 focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-[#0a0a0f] ${checked ? 'bg-(--primary)/20 border border-(--primary)/30' : 'bg-white/10 border border-white/10'}`}
-        >
-          <div className={`absolute top-0.75 w-4 h-4 rounded-full transition-transform ${checked ? 'right-1 bg-(--primary) shadow-[0_0_10px_var(--primary)]' : 'left-1 bg-gray-400'}`}></div>
-        </button>
-      </div>
-      {toasts.map((t) => (
-        <Toast key={t.id} {...t} onClose={() => removeToast(t.id)} />
-      ))}
-    </>
+    <span
+      className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
+        active
+          ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400'
+          : 'border-white/10 bg-white/5 text-(--text-muted)'
+      }`}
+    >
+      {active ? <Check size={10} /> : <Minus size={10} />}
+      {active ? activeLabel : 'Disabled'}
+    </span>
   );
 }
 
-function SettingsSection({ icon, title, desc, items }) {
-  const IconComponent = icon;
+function ToggleSwitch({ checked, label, onToggle }) {
   return (
-    <div className="glass-panel p-6 lg:p-8 rounded-4xl border border-white/5 flex flex-col h-full hover:border-white/10 transition-colors">
-      <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center mb-6 shrink-0">
-        <IconComponent size={24} className="text-(--text-muted)" />
-      </div>
-      <h3 className="text-lg font-bold text-white mb-2">{title}</h3>
-      <p className="text-sm text-(--text-muted) leading-relaxed mb-8">{desc}</p>
-      <div className="space-y-3 mt-auto">
-        {items.map((item, i) => (
-          <ToggleItem key={i} label={item.label} description={item.desc} defaultChecked={item.checked} storageKey={item.id} />
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={`Toggle ${label}`}
+      onClick={onToggle}
+      className={`relative h-6 w-11 shrink-0 rounded-full border transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2 focus-visible:ring-offset-(--background) ${
+        checked ? 'bg-(--primary)/25 border-(--primary)/50' : 'bg-white/5 border-white/10 hover:border-white/20'
+      }`}
+    >
+      <span
+        className={`absolute top-0.5 left-0.5 h-4.5 w-4.5 rounded-full transition-transform duration-300 ${
+          checked ? 'translate-x-5.5 bg-(--primary) shadow-[0_0_10px_var(--primary)]' : 'bg-gray-500'
+        }`}
+      />
+    </button>
+  );
+}
+
+function SelectControl({ value, options, label, onChange }) {
+  return (
+    <div className="relative shrink-0">
+      <select
+        value={value}
+        aria-label={label}
+        onChange={(e) => onChange(e.target.value)}
+        className="appearance-none rounded-xl border border-(--border) bg-(--surface-elevated) py-2 pl-3.5 pr-9 text-xs font-bold text-white outline-none transition-colors cursor-pointer hover:border-white/20 focus:border-(--primary)/60"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
         ))}
+      </select>
+      <ChevronDown
+        size={14}
+        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-(--text-muted)"
+      />
+    </div>
+  );
+}
+
+function SettingRow({ item, preferences, setPreference }) {
+  const isSelect = item.type === 'select';
+  const value = preferences[item.key];
+  const selectedLabel = isSelect
+    ? item.options.find((option) => option.value === value)?.label
+    : null;
+
+  return (
+    <div className="flex flex-col gap-4 rounded-2xl border border-(--border) bg-(--surface-elevated) p-5 transition-colors hover:border-white/10 sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-w-0 space-y-1.5 sm:pr-6">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <h4 className="text-sm font-bold text-white tracking-tight">{item.label}</h4>
+          <StatusPill active={Boolean(isSelect ? value !== 'off' : value)} activeLabel={selectedLabel || undefined} />
+        </div>
+        <p className="text-xs leading-relaxed text-(--text-muted)">{item.description}</p>
       </div>
+
+      {isSelect ? (
+        <SelectControl
+          value={value}
+          options={item.options}
+          label={item.label}
+          onChange={(next) => setPreference(item.key, next)}
+        />
+      ) : (
+        <ToggleSwitch
+          checked={Boolean(value)}
+          label={item.label}
+          onToggle={() => setPreference(item.key, !value)}
+        />
+      )}
     </div>
   );
 }
 
 export default function Preferences() {
-  const configSections = [
-    {
-      icon: Bell, title: 'Notifications', desc: 'Manage AI analysis alerts and system updates.',
-      items: [
-        { id: 'pref_email_notif', label: 'Email Notifications', desc: 'Core platform alerts', checked: true },
-        { id: 'pref_resume_complete', label: 'Resume Complete', desc: 'Analysis completion alerts', checked: true },
-        { id: 'pref_weekly_report', label: 'Weekly Report', desc: 'Platform activity summary', checked: false },
-        { id: 'pref_interview_reminder', label: 'Interview Reminder', desc: 'AI prep notifications', checked: true },
-        { id: 'pref_system_updates', label: 'System Updates', desc: 'New feature releases', checked: false },
-      ]
-    },
-    {
-      icon: Shield, title: 'Security', desc: 'Configure multi-factor authentication and session keys.',
-      items: [
-        { id: 'pref_2fa', label: 'Two-Factor Auth', desc: 'Require code on login', checked: false },
-        { id: 'pref_session_timeout', label: 'Session Timeout', desc: 'Auto-logout after 30m', checked: true },
-        { id: 'pref_login_history', label: 'Login History', desc: 'Track device access', checked: true },
-        { id: 'pref_active_devices', label: 'Active Devices', desc: 'Monitor concurrent sessions', checked: true },
-      ]
-    },
-    {
-      icon: Palette, title: 'Appearance', desc: 'Customize your obsidian dashboard theme and effects.',
-      items: [
-        { id: 'pref_dark_mode', label: 'Dark Mode', desc: 'Force dark theme', checked: true },
-        { id: 'pref_system_theme', label: 'System Theme', desc: 'Match OS settings', checked: false },
-        { id: 'pref_compact_mode', label: 'Compact Mode', desc: 'Reduce padding', checked: false },
-        { id: 'pref_reduced_motion', label: 'Reduced Motion', desc: 'Disable animations', checked: false },
-        { id: 'pref_density', label: 'Dashboard Density', desc: 'Show more metrics', checked: true },
-      ]
-    },
-    {
-      icon: BrainCircuit, title: 'AI Preferences', desc: 'Tune the intelligence engine analysis depth.',
-      items: [
-        { id: 'pref_detailed_summary', label: 'Detailed Summary', desc: 'Expand executive briefs', checked: true },
-        { id: 'pref_deep_parse', label: 'Deep Resume Parsing', desc: 'Aggressive extraction', checked: true },
-        { id: 'pref_auto_ats', label: 'Auto ATS Analysis', desc: 'Scan on upload', checked: true },
-        { id: 'pref_ai_recs', label: 'AI Recommendations', desc: 'Proactive suggestions', checked: true },
-        { id: 'pref_smart_scan', label: 'Smart Resume Scan', desc: 'Contextual mapping', checked: true },
-      ]
-    }
-  ];
+  const { preferences, setPreference, resetPreferences } = usePreferences();
+  const [activeTab, setActiveTab] = useState(TABS[0].id);
 
-  const systemConfigItems = [
-    { id: 'sys_perf', label: 'Performance Mode', desc: 'Optimize render cycles', checked: true },
-    { id: 'sys_cache', label: 'Cache Optimization', desc: 'Store local assets', checked: true },
-    { id: 'sys_ws', label: 'Real-time AI Sync', desc: 'WebSocket connections', checked: false },
-    { id: 'sys_gpu', label: 'GPU Acceleration', desc: 'Hardware rendering', checked: true },
-    { id: 'sys_analytics', label: 'Analytics Collection', desc: 'Anonymous usage data', checked: false },
-  ];
+  const currentTab = TABS.find((tab) => tab.id === activeTab) || TABS[0];
+  const Icon = currentTab.icon;
 
   return (
-    <div className="p-4 md:p-10 max-w-7xl mx-auto space-y-10 animate-in fade-in duration-700">
-      <div className="space-y-1">
-        <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight flex items-center gap-4">
-          Preferences <Settings className="text-(--primary)" />
-        </h2>
-        <p className="text-(--text-muted)">Tailor the AI Intelligence Platform to your workflow.</p>
+    <div className="p-4 md:p-10 max-w-7xl mx-auto">
+      {/* Page header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-8">
+        <div className="space-y-1">
+          <h2 className="text-3xl md:text-4xl font-bold text-white tracking-tight flex items-center gap-4">
+            Preferences <Settings className="text-(--primary)" />
+          </h2>
+          <p className="text-(--text-muted)">Tailor the AI Intelligence Platform to your workflow.</p>
+        </div>
+
+        <button
+          type="button"
+          onClick={resetPreferences}
+          className="flex shrink-0 items-center gap-2 self-start px-4 py-2.5 rounded-xl border border-(--border) bg-(--surface-elevated) text-xs font-bold text-(--text-muted) transition-colors hover:text-white hover:border-white/20 active:scale-95"
+        >
+          <RotateCcw size={14} /> Reset to defaults
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        {configSections.map((s, i) => (
-          <SettingsSection key={i} {...s} />
-        ))}
+      <div className="grid grid-cols-1 lg:grid-cols-[15rem_1fr] gap-6 items-start">
+        {/* Tab navigation — vertical rail on desktop, scrollable row on mobile */}
+        <nav role="tablist" aria-label="Preference sections" aria-orientation="vertical">
+          <div className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-x-visible lg:pb-0 custom-scrollbar">
+            {TABS.map((tab) => {
+              const TabIcon = tab.icon;
+              const isActive = tab.id === activeTab;
+              const enabledCount = tab.items.filter((item) => {
+                const value = preferences[item.key];
+                return item.type === 'select' ? value !== 'off' : Boolean(value);
+              }).length;
+
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  aria-controls="preferences-tabpanel"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`relative flex shrink-0 items-center gap-3 rounded-2xl border px-4 py-3 text-left transition-colors duration-300 ${
+                    isActive
+                      ? 'bg-(--primary)/10 border-(--primary)/30 text-white'
+                      : 'border-transparent text-(--text-muted) hover:bg-white/5 hover:text-white'
+                  }`}
+                >
+                  {isActive && (
+                    <motion.span
+                      layoutId="preferences-tab-indicator"
+                      className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-(--primary) shadow-[0_0_10px_var(--primary)]"
+                      transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                    />
+                  )}
+                  <TabIcon size={18} className={isActive ? 'text-(--primary)' : ''} />
+                  <span className="text-sm font-bold whitespace-nowrap">{tab.label}</span>
+                  <span className="ml-auto hidden lg:inline text-[10px] font-mono text-(--text-muted)">
+                    {enabledCount}/{tab.items.length}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </nav>
+
+        {/* Active section */}
+        <GlassCard className="p-6 md:p-8">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentTab.id}
+              id="preferences-tabpanel"
+              role="tabpanel"
+              aria-label={currentTab.title}
+              initial={{ opacity: 0, x: 16 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -16 }}
+              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <header className="flex items-start gap-4 pb-6 mb-6 border-b border-(--border)">
+                <div className="w-12 h-12 shrink-0 rounded-2xl bg-(--primary)/10 border border-(--primary)/20 flex items-center justify-center">
+                  <Icon size={22} className="text-(--primary)" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-lg font-bold text-white tracking-tight">{currentTab.title}</h3>
+                  <p className="text-sm text-(--text-muted) mt-0.5">{currentTab.description}</p>
+                </div>
+              </header>
+
+              <div className="space-y-3">
+                {currentTab.items.map((item) => (
+                  <SettingRow
+                    key={item.key}
+                    item={item}
+                    preferences={preferences}
+                    setPreference={setPreference}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </GlassCard>
       </div>
-      
-      <GlassCard className="p-6 lg:p-10">
-        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-          <Activity className="text-emerald-400" size={24} /> System Configuration
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {systemConfigItems.map((item, i) => (
-            <ToggleItem key={i} label={item.label} description={item.desc} defaultChecked={item.checked} storageKey={item.id} />
-          ))}
-        </div>
-      </GlassCard>
     </div>
   );
 }

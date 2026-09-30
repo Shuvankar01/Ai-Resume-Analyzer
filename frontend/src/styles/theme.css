@@ -76,3 +76,82 @@
     background: linear-gradient(135deg, rgba(0, 243, 255, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
   }
 }
+
+/* ── User preference layers ──────────────────────────────────────────────────
+   Applied as classes on <html> by PreferencesContext. These rules are
+   intentionally unlayered so they win over the Tailwind utilities and base
+   tokens above. None of these classes exist by default, so the stock UI is
+   completely untouched until a user opts in. */
+
+/* Compact density — Tailwind's spacing scale is rem-based, so shrinking the
+   root font size tightens padding, gaps and component sizes app-wide without
+   having to touch a single component. */
+html.compact-layout {
+  font-size: 14px;
+}
+html.compact-layout .card-glass {
+  border-radius: 1.25rem;
+}
+/* The dashboard shell is the one place that mixes units: the sidebar is sized
+   in fixed pixels by framer-motion, while these offsets are rem-based. Pin
+   them to the same pixel values used at 100% so scaling the root font size
+   never pushes the main column underneath the sidebar. */
+html.compact-layout main {
+  margin-left: 20px;
+}
+@media (min-width: 48rem) {
+  html.compact-layout main {
+    margin-left: 256px;
+  }
+}
+
+/* High contrast — deepen surfaces and strengthen borders and muted text so
+   the interface stays readable on low-quality or glare-prone displays. */
+html.high-contrast {
+  --background: #000000;
+  --surface: #05050a;
+  --surface-elevated: #14141d;
+  --text: #ffffff;
+  --text-muted: #c4c4d1;
+  --border: rgba(255, 255, 255, 0.22);
+  --border-hover: rgba(0, 243, 255, 0.6);
+  --glass-bg: rgba(0, 0, 0, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.16);
+}
+html.high-contrast .text-gray-200,
+html.high-contrast .text-gray-300,
+html.high-contrast .text-gray-400,
+html.high-contrast .text-gray-500,
+html.high-contrast .text-gray-600,
+html.high-contrast .text-gray-700 {
+  color: var(--text-muted);
+}
+html.high-contrast .text-white\/10 {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* Reduced motion — collapses every CSS animation and transition. Framer Motion
+   animations are handled separately through MotionConfig in the provider. */
+html.reduce-motion *,
+html.reduce-motion *::before,
+html.reduce-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-delay: 0ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  transition-delay: 0ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Performance mode — drops the expensive glass blur, ambient shadows and
+   looping keyframe animations that keep the GPU busy while scrolling. */
+html.perf-mode .card-glass {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: inset 0 1px 0 var(--glass-highlight);
+}
+html.perf-mode *,
+html.perf-mode *::before,
+html.perf-mode *::after {
+  animation: none !important;
+}

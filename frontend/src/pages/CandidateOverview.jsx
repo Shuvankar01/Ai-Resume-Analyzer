@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { usePreferences } from '../context/PreferencesContext';
+import { useNotifications } from '../context/NotificationContext';
 import ATSScoreCard from '../components/ui/ATSScoreCard';
 import GlassCard from '../components/ui/GlassCard';
 import MotionWrapper from '../components/ui/MotionWrapper';
@@ -83,6 +85,12 @@ function HealthMetrics({ analysis }) {
 export default function CandidateOverview() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { preferences } = usePreferences();
+  const { addNotification } = useNotifications();
+  const autoAnalyze = preferences.pref_auto_analyze;
+  const showRecommendations = preferences.pref_ai_recommendations;
+  const detailedSummary = preferences.pref_detailed_summary;
+  const offlineCache = preferences.pref_offline_cache;
   const [file, setFile] = useState(null);
   const [jobDescription, setJobDescription] = useState('');
   const [resumeId, setResumeId] = useState(null);
@@ -102,10 +110,16 @@ export default function CandidateOverview() {
     try {
       const data = await resumeService.getHistory();
       setHistory(data);
+      resumeService.setCached(resumeService.CACHE_KEYS.history, data);
     } catch (err) {
+      // Offline Cache preference: fall back to the last synced snapshot.
+      const cached = offlineCache
+        ? resumeService.getCached(resumeService.CACHE_KEYS.history)
+        : null;
+      if (cached) setHistory(cached.data);
       console.error(err);
     }
-  }, []);
+  }, [offlineCache]);
 
   useEffect(() => {
     loadHistory();
@@ -149,6 +163,60 @@ export default function CandidateOverview() {
     setIsDragActive(false);
   }, []);
 
+  // Shared analysis runner, declared before processUpload so the
+  // "Auto-Analyze on Upload" preference can start it from there. The manual
+  // "Run Intelligence Sync" button shows the staged progress toasts; the
+  // automatic path starts the same work without them.
+  const runAnalysis = async (targetResumeId, targetJobDescription, { skipMockStages = false } = {}) => {
+    try {
+      setStatus(STATUS.PROCESSING);
+      setJobStatus('pending');
+
+      if (!skipMockStages) {
+        // Simulate multi-stage animated workflow
+        const mockStages = ['Parsing PDF document...', 'Vectorizing candidate skills...', 'Scoring against ATS criteria...', 'Generating AI insights...'];
+        for (const stage of mockStages) {
+          addToast(stage, 'info');
+          await new Promise(r => setTimeout(r, 800)); // 800ms delay per stage
+        }
+      }
+
+      const analysisData = await resumeService.analyze(targetResumeId, targetJobDescription, (statusData) => {
+        setJobStatus(statusData.status);
+      });
+      setAnalysis(analysisData);
+      setStatus(STATUS.COMPLETED);
+      
+      // Global Event Sync
+      window.dispatchEvent(new CustomEvent('resume_ai_activity_updated', {
+        detail: { id: Date.now().toString(), type: 'ANALYSIS', title: 'Analysis Completed', description: `Scored resume against Job Description.` }
+      }));
+      
+      // Add to local resume history
+      activityService.addResume({
+        resumeId: targetResumeId,
+        filename: file?.name || 'Resume.pdf',
+        atsScore: analysisData.ats_score,
+        aiScore: analysisData.ai_confidence || 85,
+        matchedRole: previewData?.professional_summary?.split('.')[0] || 'Software Engineer',
+        status: 'Analyzed',
+        duration: '1.2s' // Mocked duration
+      });
+
+      addToast('Intelligence analysis complete!', 'success');
+      addNotification(
+        `Analysis complete — ATS score ${analysisData.ats_score ?? 'n/a'}%.`,
+        'success',
+        { category: 'analysis' }
+      );
+    } catch (err) {
+      setJobStatus('failed');
+      setStatus(STATUS.FAILED);
+      setErrorMsg(err.response?.data?.detail || err.message || 'The intelligence extraction encountered an error.');
+      addNotification('Analysis failed. Review the error and try again.', 'error', { category: 'analysis' });
+    }
+  };
+
   const processUpload = async (uploadFile) => {
     try {
       setStatus(STATUS.UPLOADING);
@@ -161,10 +229,12 @@ export default function CandidateOverview() {
       setPreviewData(preview);
       
       // Auto-generate suggested Job Description based on preview data
+      let generatedJobDescription = null;
       if (!jobDescription && (preview?.skills || preview?.professional_summary)) {
         const topSkills = preview.skills ? Object.values(preview.skills).flat().slice(0, 5).join(', ') : 'modern technologies';
         const roleMatch = preview.professional_summary ? preview.professional_summary.split('.')[0] : 'Software Engineer';
-        setJobDescription(`We are looking for an experienced professional to join our team.\n\nKey Responsibilities:\n- Contribute to scalable architecture and design.\n- Collaborate with cross-functional teams.\n\nRequired Skills:\n- Strong proficiency in ${topSkills}.\n- Relevant experience matching: ${roleMatch}.`);
+        generatedJobDescription = `We are looking for an experienced professional to join our team.\n\nKey Responsibilities:\n- Contribute to scalable architecture and design.\n- Collaborate with cross-functional teams.\n\nRequired Skills:\n- Strong proficiency in ${topSkills}.\n- Relevant experience matching: ${roleMatch}.`;
+        setJobDescription(generatedJobDescription);
       }
       
       setStatus(STATUS.PREVIEW_ACTIVE);
@@ -173,6 +243,14 @@ export default function CandidateOverview() {
       window.dispatchEvent(new CustomEvent('resume_ai_activity_updated', {
         detail: { id: Date.now().toString(), type: 'UPLOAD', title: 'Resume Uploaded', description: `Successfully parsed ${uploadFile.name}` }
       }));
+
+      addNotification(`Parsed ${uploadFile.name} successfully.`, 'success', { category: 'analysis' });
+
+      // Auto-Analyze on Upload preference: kick off the analysis the moment
+      // the preview is ready, using the job description generated above.
+      if (autoAnalyze && generatedJobDescription) {
+        runAnalysis(newResumeId, generatedJobDescription, { skipMockStages: true });
+      }
     } catch (err) {
       setStatus(STATUS.FAILED);
       setErrorMsg(err.response?.data?.detail || err.message || 'Failed to upload or generate preview.');
@@ -203,51 +281,14 @@ export default function CandidateOverview() {
     }
   };
 
+  // Manual entry point for the shared analysis runner.
   const handleWorkflow = async (e) => {
     e?.preventDefault();
     if (!resumeId || !jobDescription) {
       addToast('Please provide both a resume and job description.', 'error');
       return;
     }
-    try {
-      setStatus(STATUS.PROCESSING);
-      setJobStatus('pending');
-      
-      // Simulate multi-stage animated workflow
-      const mockStages = ['Parsing PDF document...', 'Vectorizing candidate skills...', 'Scoring against ATS criteria...', 'Generating AI insights...'];
-      for (const stage of mockStages) {
-        addToast(stage, 'info');
-        await new Promise(r => setTimeout(r, 800)); // 800ms delay per stage
-      }
-
-      const analysisData = await resumeService.analyze(resumeId, jobDescription, (statusData) => {
-        setJobStatus(statusData.status);
-      });
-      setAnalysis(analysisData);
-      setStatus(STATUS.COMPLETED);
-      
-      // Global Event Sync
-      window.dispatchEvent(new CustomEvent('resume_ai_activity_updated', {
-        detail: { id: Date.now().toString(), type: 'ANALYSIS', title: 'Analysis Completed', description: `Scored resume against Job Description.` }
-      }));
-      
-      // Add to local resume history
-      activityService.addResume({
-        resumeId: resumeId,
-        filename: file?.name || 'Resume.pdf',
-        atsScore: analysisData.ats_score,
-        aiScore: analysisData.ai_confidence || 85,
-        matchedRole: previewData?.professional_summary?.split('.')[0] || 'Software Engineer',
-        status: 'Analyzed',
-        duration: '1.2s' // Mocked duration
-      });
-
-      addToast('Intelligence analysis complete!', 'success');
-    } catch (err) {
-      setJobStatus('failed');
-      setStatus(STATUS.FAILED);
-      setErrorMsg(err.response?.data?.detail || err.message || 'The intelligence extraction encountered an error.');
-    }
+    await runAnalysis(resumeId, jobDescription);
   };
 
   const handleDownload = useCallback(async () => {
@@ -446,7 +487,8 @@ export default function CandidateOverview() {
                 )}
               </form>
             </GlassCard>
-            {status === STATUS.COMPLETED && (
+            {/* AI Recommendations preference */}
+            {status === STATUS.COMPLETED && showRecommendations && (
               <div className="mt-8">
                 <ImprovementRoadmap analysis={analysis} />
               </div>
@@ -480,6 +522,8 @@ export default function CandidateOverview() {
             ) : status === STATUS.PREVIEW_ACTIVE && previewData ? (
               <ResumePreviewDashboard 
                 previewData={previewData} 
+                showRecommendations={showRecommendations}
+                detailedSummary={detailedSummary}
                 onAction={(action) => {
                   if (action === 'analyze') {
                     if (jobDescription.length >= 50) {
@@ -579,7 +623,7 @@ export default function CandidateOverview() {
                         </div>
                       )}
                       {activeTab === 'skills' && <MemoizedSkillRadar analysis={analysis} />}
-                      {activeTab === 'career' && <MemoizedCareerInsight analysis={analysis} />}
+                      {activeTab === 'career' && showRecommendations && <MemoizedCareerInsight analysis={analysis} />}
                     </motion.div>
                   </AnimatePresence>
                 </div>

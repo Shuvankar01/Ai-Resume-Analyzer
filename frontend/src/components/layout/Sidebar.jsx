@@ -1,4 +1,4 @@
-import { LayoutDashboard, FileText, Users, Settings, LogOut, ChevronLeft, ChevronRight, BrainCircuit, Shield, User, GitCompare } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Settings, LogOut, ChevronLeft, ChevronRight, BrainCircuit, Shield, User, GitCompare, Cpu } from 'lucide-react';
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
@@ -18,6 +18,10 @@ export default function Sidebar() {
     { id: 'dashboard', label: 'Overview', icon: LayoutDashboard, path: '/recruiter', roles: ['recruiter'], end: true },
     { id: 'candidates', label: 'Talent Pool', icon: Users, path: '/recruiter/talent-pool', roles: ['recruiter'] },
     { id: 'recruiter-profile', label: 'Recruiter Profile', icon: User, path: '/recruiter/profile', roles: ['recruiter'] },
+
+    // Internal platform telemetry (DB/Redis/queue/node health) — deliberately
+    // out of the hiring surfaces; linked from the recruiter profile as well.
+    { id: 'system-ops', label: 'System Operations', icon: Cpu, path: '/admin/system', roles: ['recruiter'] },
     
     { id: 'settings', label: 'Preferences', icon: Settings, path: role === 'recruiter' ? '/recruiter/preferences' : '/candidate/preferences', roles: ['candidate', 'recruiter'] },
   ];

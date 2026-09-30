@@ -32,7 +32,7 @@ function CollapsibleSection({ title, items, defaultOpen = true, iconColorClass =
   );
 }
 
-export default memo(function ExecutiveSummaryCard({ summary, interviewQuestions, learningRoadmap, careerGrowth }) {
+export default memo(function ExecutiveSummaryCard({ summary, interviewQuestions, learningRoadmap, careerGrowth, detailed = true }) {
   if (!summary) return null;
   return (
     <GlassCard className="p-6 relative overflow-hidden flex flex-col gap-6">
@@ -48,26 +48,35 @@ export default memo(function ExecutiveSummaryCard({ summary, interviewQuestions,
         </p>
       </div>
 
-      <CollapsibleSection 
-        icon={MessageSquare} 
-        title="Suggested Technical Questions" 
-        items={interviewQuestions} 
-        iconColorClass="text-blue-400" 
-      />
-      
-      <CollapsibleSection 
-        icon={Map} 
-        title="Learning Roadmap" 
-        items={learningRoadmap} 
-        iconColorClass="text-emerald-400" 
-      />
-      
-      <CollapsibleSection 
-        icon={TrendingUp} 
-        title="Career Growth Suggestions" 
-        items={careerGrowth} 
-        iconColorClass="text-purple-400" 
-      />
+      {/* Detailed AI Summaries preference — off keeps only the summary above. */}
+      {detailed ? (
+        <>
+          <CollapsibleSection 
+            icon={MessageSquare} 
+            title="Suggested Technical Questions" 
+            items={interviewQuestions} 
+            iconColorClass="text-blue-400" 
+          />
+          
+          <CollapsibleSection 
+            icon={Map} 
+            title="Learning Roadmap" 
+            items={learningRoadmap} 
+            iconColorClass="text-emerald-400" 
+          />
+          
+          <CollapsibleSection 
+            icon={TrendingUp} 
+            title="Career Growth Suggestions" 
+            items={careerGrowth} 
+            iconColorClass="text-purple-400" 
+          />
+        </>
+      ) : (
+        <p className="text-xs text-(--text-muted) italic">
+          Detailed breakdowns are hidden. Enable “Detailed AI Summaries” in Preferences → AI to restore them.
+        </p>
+      )}
     </GlassCard>
   );
 });

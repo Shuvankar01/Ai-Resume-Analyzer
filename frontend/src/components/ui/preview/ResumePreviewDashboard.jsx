@@ -21,7 +21,7 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 }
 };
 
-export default function ResumePreviewDashboard({ previewData, onAction }) {
+export default function ResumePreviewDashboard({ previewData, onAction, showRecommendations = true, detailedSummary = true }) {
   if (!previewData) return null;
 
   return (
@@ -48,6 +48,7 @@ export default function ResumePreviewDashboard({ previewData, onAction }) {
               interviewQuestions={previewData.interview_questions}
               learningRoadmap={previewData.learning_roadmap}
               careerGrowth={previewData.career_growth_suggestions}
+              detailed={detailedSummary}
             />
           </motion.div>
           
@@ -61,9 +62,11 @@ export default function ResumePreviewDashboard({ previewData, onAction }) {
         </div>
         
         <div className="space-y-6">
-          <motion.div variants={itemVariants}>
-            <SuggestedRolesCard roles={previewData.roles} />
-          </motion.div>
+          {showRecommendations && (
+            <motion.div variants={itemVariants}>
+              <SuggestedRolesCard roles={previewData.roles} />
+            </motion.div>
+          )}
           
           <motion.div variants={itemVariants}>
             <AtsMetricsCard ats={previewData.ats} risks={previewData.risks} />

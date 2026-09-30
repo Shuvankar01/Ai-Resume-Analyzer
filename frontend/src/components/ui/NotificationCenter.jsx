@@ -1,14 +1,17 @@
 import { useState, useRef, useEffect } from 'react';
-import { Bell, Check, Trash2, CheckSquare } from 'lucide-react';
+import { Bell, Check, Trash2, CheckSquare, BellOff } from 'lucide-react';
 import { useNotifications } from '../../context/NotificationContext';
+import { usePreferences } from '../../context/PreferencesContext';
 import { AnimatePresence, motion } from 'framer-motion';
 
 export default function NotificationCenter() {
   const [isOpen, setIsOpen] = useState(false);
   const { notifications, markAsRead, markAllAsRead, clearAll } = useNotifications();
+  const { preferences } = usePreferences();
   const dropdownRef = useRef(null);
 
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const alertsEnabled = preferences.pref_notifications;
+  const unreadCount = alertsEnabled ? notifications.filter((n) => !n.isRead).length : 0;
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -49,11 +52,20 @@ export default function NotificationCenter() {
       {/* Bell Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
+        title={alertsEnabled ? 'Notifications' : 'In-App Alerts are turned off in Preferences'}
         className={`relative p-2.5 rounded-xl border transition-all duration-300 hover:bg-white/5 active:scale-95
-          ${isOpen ? 'border-(--primary) text-white bg-(--primary)/10' : 'border-(--border) text-(--text-muted) hover:text-white'}
+          ${isOpen
+            ? 'border-(--primary) text-white bg-(--primary)/10'
+            : alertsEnabled
+              ? 'border-(--border) text-(--text-muted) hover:text-white'
+              : 'border-white/5 text-white/25 hover:text-white/50'}
         `}
       >
-        <Bell size={18} className={unreadCount > 0 ? 'animate-bounce' : ''} />
+        {alertsEnabled ? (
+          <Bell size={18} className={unreadCount > 0 ? 'animate-bounce' : ''} />
+        ) : (
+          <BellOff size={18} />
+        )}
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 bg-rose-500 text-white text-[10px] font-black rounded-full flex items-center justify-center border border-[#05050A] shadow-lg animate-pulse">
             {unreadCount}
@@ -76,11 +88,13 @@ export default function NotificationCenter() {
               <div>
                 <h4 className="text-sm font-black text-white tracking-tight">Notifications</h4>
                 <p className="text-[10px] text-(--text-muted) font-bold">
-                  {unreadCount} unread message{unreadCount !== 1 ? 's' : ''}
+                  {alertsEnabled
+                    ? `${unreadCount} unread message${unreadCount !== 1 ? 's' : ''}`
+                    : 'Alerts are turned off'}
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                {unreadCount > 0 && (
+                {alertsEnabled && unreadCount > 0 && (
                   <button
                     onClick={markAllAsRead}
                     title="Mark all as read"
@@ -89,7 +103,7 @@ export default function NotificationCenter() {
                     <CheckSquare size={14} />
                   </button>
                 )}
-                {notifications.length > 0 && (
+                {alertsEnabled && notifications.length > 0 && (
                   <button
                     onClick={clearAll}
                     title="Clear all"
@@ -103,7 +117,14 @@ export default function NotificationCenter() {
 
             {/* List */}
             <div className="flex-1 overflow-y-auto divide-y divide-(--border) max-h-80">
-              {notifications.length === 0 ? (
+              {!alertsEnabled ? (
+                <div className="p-8 text-center space-y-2">
+                  <BellOff size={28} className="mx-auto text-white/10" />
+                  <p className="text-xs text-(--text-muted) font-medium">
+                    In-App Alerts are off. Turn them back on under Preferences → Notifications.
+                  </p>
+                </div>
+              ) : notifications.length === 0 ? (
                 <div className="p-8 text-center space-y-2">
                   <Bell size={28} className="mx-auto text-white/10" />
                   <p className="text-xs text-(--text-muted) font-medium">All caught up! No notifications.</p>
