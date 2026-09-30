@@ -55,7 +55,11 @@ class GeminiService:
             "candidate_strengths": list(matched)[:3]
         }
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=10))
+    # Gemini returns 503 UNAVAILABLE under load fairly often, and a short retry
+    # window drops the whole AI pass into the heuristic fallback on a transient
+    # capacity blip. Five attempts over ~29s rides those out while staying well
+    # inside the Celery 240s soft time limit for the whole analysis job.
+    @retry(stop=stop_after_attempt(5), wait=wait_exponential(min=2, max=15))
     def _call_ai(self, prompt: str) -> str:
         """Call Gemini with exponential backoff using the new SDK"""
         if not self.client:
@@ -228,6 +232,102 @@ class GeminiService:
         except Exception as e:
             logger.error(f"💥 AI Pipeline Failure: {str(e)}")
             return self._simple_fallback(resume_text, job_description)
+
+    def _parse_json_response(self, raw_response: str) -> Dict:
+        """Shared fence-stripping used by every structured prompt in this service.
+
+        Both existing prompts already hand-parse markdown fences, so this
+        centralizes the same behaviour for the new recruiter parser rather than
+        introducing a different convention.
+        """
+        clean_json = raw_response
+        if "```json" in raw_response:
+            clean_json = raw_response.split("```json")[1].split("```")[0].strip()
+        elif "```" in raw_response:
+            clean_json = raw_response.split("```")[1].split("```")[0].strip()
+        return json.loads(clean_json)
+
+    async def parse_recruiter_bio(self, bio_text: str, filename: str) -> Dict:
+        """Extract recruiter profile fields from an uploaded bio or resume PDF.
+
+        Used by recruiter onboarding Option B. Mirrors the never-raises
+        contract of the other methods here: a failure returns a heuristic
+        extraction so the onboarding form always has something to show.
+        """
+        prompt = f"""
+        You are a Recruitment Intelligence Engine. Read the following recruiter
+        bio or resume and extract structured hiring profile fields.
+
+        STRICT SCHEMA (JSON ONLY):
+        {{
+            "full_name": "Recruiter Name",
+            "experience_level": "e.g. Senior (8+ years)",
+            "company_name": "Current or most recent company, or empty string",
+            "industry": "Hiring domain / industry vertical, e.g. Fintech",
+            "designation": "Current role title, e.g. Senior Talent Partner",
+            "hiring_goals": "One or two sentences describing what they are hiring for",
+            "tech_stack": ["Python", "React", "AWS"],
+            "bio_summary": "Two sentence professional summary of the recruiter"
+        }}
+
+        IMPORTANT RULES:
+        1. `tech_stack` must be real technologies this recruiter has hired for or
+           works with. NEVER invent generic words like "startup", "business",
+           "company", "clients", "hiring" as technologies.
+        2. If a field is genuinely absent from the document, return an empty
+           string or empty list for it. Do NOT guess.
+        3. `hiring_goals` and `bio_summary` must each be under 40 words.
+
+        Source Filename: {filename}
+        Document Content:
+        {bio_text}
+        """
+
+        try:
+            raw_response = self._call_ai(prompt)
+            result = self._parse_json_response(raw_response)
+
+            def as_list(value):
+                if isinstance(value, list):
+                    return [str(v).strip() for v in value if str(v).strip()]
+                if isinstance(value, str) and value.strip():
+                    return [p.strip() for p in value.split(",") if p.strip()]
+                return []
+
+            def as_text(value):
+                return value.strip() if isinstance(value, str) else ""
+
+            return {
+                "full_name": as_text(result.get("full_name")),
+                "experience_level": as_text(result.get("experience_level")),
+                "company_name": as_text(result.get("company_name")),
+                "industry": as_text(result.get("industry")),
+                "designation": as_text(result.get("designation")),
+                "hiring_goals": as_text(result.get("hiring_goals")),
+                "tech_stack": as_list(result.get("tech_stack")),
+                "bio_summary": as_text(result.get("bio_summary")),
+                "source_filename": filename,
+                "parse_status": "ai",
+            }
+        except Exception as e:
+            logger.error(f"💥 Recruiter Bio Parse Failure: {str(e)}")
+            # Heuristic fallback so the onboarding form still gets populated
+            # rather than leaving the recruiter at a dead end.
+            return {
+                "full_name": "",
+                "experience_level": "",
+                "company_name": "",
+                "industry": "",
+                "designation": "",
+                "hiring_goals": "",
+                "tech_stack": [],
+                "bio_summary": (
+                    "AI parsing is unavailable right now, so we could not read this "
+                    "document. Fill the form manually or try uploading again later."
+                ),
+                "source_filename": filename,
+                "parse_status": "fallback",
+            }
 
 # Global Instance
 gemini_service = GeminiService()
