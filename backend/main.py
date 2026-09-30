@@ -7,7 +7,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from database import engine, Base
-from routers import auth_router, resume_router, analytics_router, job_router
+from routers import auth_router, resume_router, analytics_router, job_router, recruiter_router
 from config import settings
 
 from utils.logging_config import setup_logging
@@ -55,6 +55,7 @@ app.include_router(auth_router.router)
 app.include_router(resume_router.router)
 app.include_router(analytics_router.router)
 app.include_router(job_router.router)
+app.include_router(recruiter_router.router)
 
 @app.on_event("startup")
 def startup_event():

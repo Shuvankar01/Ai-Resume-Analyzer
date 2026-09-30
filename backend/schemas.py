@@ -23,6 +23,106 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
+
+# --- Recruiter Profile Schemas (onboarding) ---
+class RecruiterProfileBase(BaseModel):
+    company_name: Optional[str] = None
+    industry: Optional[str] = None
+    designation: Optional[str] = None
+    hiring_goals: Optional[str] = None
+    experience_level: Optional[str] = None
+    bio_summary: Optional[str] = None
+
+class RecruiterProfileUpdate(RecruiterProfileBase):
+    """Option A payload — manual form entry. `tech_stack` is accepted as a list
+    and stored as a JSON string column, matching the TEXT/JSON convention used
+    by `analyses.matched_keywords` and `job_descriptions.required_skills`."""
+    tech_stack: Optional[List[str]] = None
+    source_filename: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class RecruiterProfileResponse(RecruiterProfileBase):
+    id: Optional[int] = None
+    tech_stack: List[str] = []
+    source_filename: Optional[str] = None
+    # False for a brand new recruiter, which is what triggers the onboarding modal.
+    onboarding_completed: bool = False
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+# --- Candidate Action Schemas (recruiter pipeline) ---
+class CandidateActionCreate(BaseModel):
+    candidate_id: Optional[int] = None
+    candidate_name: str
+    action: str  # SHORTLIST | REJECT | INTERVIEW | OFFER
+    ats_score: Optional[float] = None
+    notes: Optional[str] = None
+    scheduled_for: Optional[datetime] = None
+
+class CandidateActionResponse(BaseModel):
+    id: int
+    recruiter_id: int
+    candidate_id: Optional[int]
+    candidate_name: str
+    action: str
+    status: str
+    ats_score: Optional[float]
+    notes: Optional[str]
+    scheduled_for: Optional[datetime]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# --- Recruiter Candidate Intelligence Schema ---
+class CandidateContact(BaseModel):
+    id: Optional[int] = None
+    name: str
+    email: Optional[str] = None
+    resume_id: Optional[int] = None
+    filename: Optional[str] = None
+
+class CandidateIntelligence(BaseModel):
+    """The complete AI-parsed dataset for one candidate, as shown on the
+    recruiter spotlight / profile view. Every field is optional because it is
+    derived from two independent AI passes (ATS analysis + resume preview) and
+    either one can be missing for a given candidate."""
+    contact: CandidateContact
+    # ATS
+    ats_score: Optional[float] = None
+    keyword_match_percent: Optional[int] = None
+    matched_keywords: List[str] = []
+    missing_keywords: List[str] = []
+    candidate_strengths: List[str] = []
+    ai_briefing: Optional[str] = None          # recruiter_summary
+    recommendations: Optional[str] = None
+    # Profile fields from the resume preview pass
+    experience: Optional[str] = None
+    expected_salary: Optional[str] = None
+    location: Optional[str] = None
+    availability: Optional[str] = None
+    notice_period: Optional[str] = None
+    career_stage: Optional[str] = None
+    market_value: Optional[str] = None
+    target_roles: List[str] = []
+    summary: Optional[str] = None
+    # Skills breakdown
+    primary_tech_stack: List[str] = []
+    skills_breakdown: dict = {}
+    strengths: List[str] = []
+    weaknesses: List[str] = []
+    # Links
+    report_url: Optional[str] = None
+    has_analysis: bool = False
+    has_preview: bool = False
+
 class TokenData(BaseModel):
     email: Optional[str] = None
 
